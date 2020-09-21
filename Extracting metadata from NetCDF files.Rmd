@@ -227,6 +227,22 @@ first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
 leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_D_formatted)
 ```
 
+### Adding the last value of the last day to the labels dataframe
+```{r}
+# Getting the last day
+last_day_df = as.data.frame(tail(list, n = 1))
+# Setting the name of the columns to the same names of the first_days dataframe
+# This makes it easier to combine both dataframes
+names(last_day_df) = colnames(first_days)
+last_day = tail(last_day_df, n=1)
+#Adding the last value of the last day to the first_days dataframe
+first_days_plus_last_value = rbind(first_days, last_day)
+```
+
+```{r}
+# Plotting the glider track with labels including the last vlaue of the last day
+leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(data = first_days_plus_last_value, lat = ~first_days_plus_last_value$lat, lng = ~first_days_plus_last_value$lon, label = first_days_plus_last_value$time_D_formatted)
+```
 
 ```{r}
 # This provides a summary of the dataframe based on the date
