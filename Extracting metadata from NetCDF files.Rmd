@@ -1,0 +1,254 @@
+---
+title: "JSON in R"
+author: "Fadi Moubayed"
+date: "9/14/2020"
+output: html_document
+---
+
+### Loading packages
+```{r message=FALSE,warning=FALSE}
+# JSON libraries
+library(rjson)
+library(RJSONIO)
+library(jsonlite)
+
+# To read the netCDF file (check for better options!)
+library(ncdf4)
+
+# To get the min bounding box
+library(sp)
+library(shotGroups)
+
+# To plot the track of the glider
+library(spacetime)
+library(trajectories)
+library(leaflet)
+
+# To format dates
+library(lubridate)
+
+# ?? Not sure why I was using this
+library(tidyverse)
+
+```
+
+
+
+### The following function lists the functions available in the loaded libraries
+```{r}
+ListLoadedLibraries = function(){
+  # Listing the default libraries. These do not need to be listed
+  defaultLibraries = list("stats","graphics" ,"grDevices","utils","datasets" ,"methods","base")
+  # Listing the loaded libraries
+  loadedLibraries = (.packages())
+  # Getting the loaded libraries only
+  LoadedlibrariesOnly = setdiff(loadedLibraries, defaultLibraries)
+  
+  # Adding package: to the names of the libraries
+  libraries1= paste0("package:", LoadedlibrariesOnly)
+  sapply(libraries1, ls)
+}
+
+```
+
+### Listing what functions the JSON libraries in R have
+
+
+```{r}
+# ListLoadedLibraries()
+
+``` 
+
+### The following function extracts the minimum bounding box of the netCDF file into a json file
+```{r}
+getMinBBox = function(filePath){
+  
+}
+
+``` 
+
+### Opening the netCDF file and getting the lattitude and longitude
+```{r}
+# This is where the netCDF data files reside
+netCDF_Data_Files_Path = "D:/University/WWU/WWU 5/Task 1/Reading netCDF data using R/"
+# This is the files that needs to be read
+netCDF_File_Name = "amerigo_coconet_R.nc"
+# This is the complete path to the netCDF file that is being read
+file_Path = paste0(netCDF_Data_Files_Path,netCDF_File_Name)
+#Reading the file
+file = nc_open(file_Path)
+# Getting the latitude and longitude
+lon = ncvar_get(file,"LONGITUDE")
+lat = ncvar_get(file,"LATITUDE")
+``` 
+
+
+### Getting the min bounding box using the library sp
+```{r}
+# Combining the lat and lon in a dataframe
+lat_lon = cbind.data.frame(lat,lon)
+# Changing the column names of the dataframe
+names(lat_lon)[1] = "point.x"
+names(lat_lon)[2] = "point.y"
+# Converting the dataframe to a SpatialPoints object
+lat_lon_spatial = SpatialPoints(lat_lon)
+# Applying the bbox function
+bb_sp = bbox(lat_lon_spatial)
+
+head(lat_lon)
+bb_sp
+```
+
+### Getting the bbox using the library shotGroups
+This function also returns the width and height of the bounding box. Since the projection is WGS84. This information is not useful.
+```{r}
+bb = getBoundingBox(lat_lon)
+bb
+```
+
+### Getting the minimum and the maximum of the lat and lon
+This is to check what the functions above are returning.
+```{r}
+range(lat)
+range(lon)
+```
+
+### Getting the minimum bounding box
+This function returns the minimum bounding box but it returns NULL. I was not able to figure out what the problem is.
+
+```{r}
+x = getMinBBox(lat_lon)
+x
+```
+
+```{r}
+test = cbind(lat,lon)
+y = getMinBBox(test)
+y
+```
+
+
+
+
+
+
+## Plotting the track of the netCDF file 
+
+```{r}
+# Getting the time
+time_D = file$dim$TIME
+# Formatting the time
+time_D_formatted = as.POSIXct(time_D$vals, origin="1970-01-01")
+# Setting a projection
+crs = CRS("+proj=longlat +datum=WGS84")
+```
+
+```{r}
+# Creating an STIDF object
+stidf = STIDF(SpatialPoints(cbind(lat,lon),crs), time_D_formatted, data.frame(lat_lon))
+# Creating a track object
+glider_track = Track(stidf)
+plot(glider_track)
+```
+
+```{r}
+# Accessing the coordinates of the Track object
+# A1@data[,1]
+# A1@data[,2]
+# Ploting the glider track using leflet
+ leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2])
+```
+
+
+
+```{r}
+# Getting the time stamp of the time available in the netCDF file
+timeStamp = format(time_D_formatted,'%H:%M:%S')
+# Getting the date of the time available in the netCDF file
+date = as.Date(time_D_formatted)
+# Combining the lat, lon, time , time stamp and the date in one dataframe
+lat_lon_time_dateframe = cbind.data.frame(lat, lon, time_D_formatted, timeStamp, date)
+
+head(lat_lon_time_dateframe)
+
+# !!! I tried this but it does not work !!!
+# I wanted to get the minimum date of each day in the dataframe
+# test %>% group_by(time_D_formatted) %>% filter(time_D_formatted == min(time_D_formatted))
+```
+
+### getting the first date of each day through looping the time column
+This is not effecient at all and R crashed when I tried it.
+```{r}
+time_array = lat_lon_time_dateframe[,3]
+head(time_array)
+
+
+#Getting the first value of the arry
+first_value = time_array[1]
+
+as.Date(ymd_hms(first_value))
+
+
+#for(i in time_array){
+#  as.Date(ymd_hms(i))
+#}
+```
+
+### Trying to add the coordinated of the labels that should be added to the leaflet map manually
+Adding the coordinates to the addMarkers using coordinate1[1] did not work. I had to hard code the coordinates.
+
+This section extracts the coordinates of the first value of each day manually. The labels are also manually added to the leaflet map.
+```{r}
+# manual_labels = data.frame("lat", "lon", "time_formated")
+
+coordinate1 = c(as.double(41.66751),	as.double(17.06750),	"2013-05-15 14:14:48")
+coordinate2 = c("41.69140",	"17.09850",	"2013-05-16 02:00:00")
+  
+leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(lng = 17.06750,
+                                                                                              lat = 41.66751,
+                                                                                              label = coordinate1[3],
+                                                                                            labelOptions = labelOptions(noHide =T)) %>% addMarkers(lng = 17.09850, lat = 41.69140, label = coordinate2[3])
+```
+
+### Getting the first value of each day of the data available in the netCDF file 
+
+What I thought of is splitting the dataframe that has all the days in the netCDF file into seperate dataframes each containing the measurement for each day. The first row of each dataframe is then extracted to get the first measurement of that day.
+
+```{r}
+# Splitting the dataframe based on date
+# This results in a list of dataframes
+list = split(lat_lon_time_dateframe, lat_lon_time_dateframe$date)
+#This provides the first row of each day in the data frame
+do.call(rbind, (lapply(list, function(x) x[1,])))
+
+# This provides a summary of the dataframe based on the date
+lat_lon_time_dateframe %>% group_split(date) %>% map(summary)
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+
+```{r}
+
+```
