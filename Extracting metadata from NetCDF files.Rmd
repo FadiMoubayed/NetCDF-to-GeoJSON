@@ -1,5 +1,5 @@
 ---
-title: "JSON in R"
+title: "Extracting metadata from the netCDF files"
 author: "Fadi Moubayed"
 date: "9/14/2020"
 output: html_document
@@ -50,6 +50,8 @@ ListLoadedLibraries = function(){
 }
 
 ```
+
+
 
 ### Listing what functions the JSON libraries in R have
 
@@ -176,7 +178,7 @@ head(lat_lon_time_dateframe)
 # test %>% group_by(time_D_formatted) %>% filter(time_D_formatted == min(time_D_formatted))
 ```
 
-### getting the first date of each day through looping the time column
+### Getting the first date of each day through looping the time column
 This is not effecient at all and R crashed when I tried it.
 ```{r}
 time_array = lat_lon_time_dateframe[,3]
@@ -219,15 +221,16 @@ What I thought of is splitting the dataframe that has all the days in the netCDF
 # This results in a list of dataframes
 list = split(lat_lon_time_dateframe, lat_lon_time_dateframe$date)
 #This provides the first row of each day in the data frame
-do.call(rbind, (lapply(list, function(x) x[1,])))
+first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
 
-# This provides a summary of the dataframe based on the date
-lat_lon_time_dateframe %>% group_split(date) %>% map(summary)
+# Plotting the glider track with labels
+leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_D_formatted)
 ```
 
 
 ```{r}
-
+# This provides a summary of the dataframe based on the date
+lat_lon_time_dateframe %>% group_split(date) %>% map(summary)
 ```
 
 
