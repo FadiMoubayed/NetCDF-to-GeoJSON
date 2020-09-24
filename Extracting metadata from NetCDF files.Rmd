@@ -30,6 +30,9 @@ library(lubridate)
 # ?? Not sure why I was using this
 library(tidyverse)
 
+# to format text in the console (does not format text in R markdown)
+require(crayon)
+
 ```
 
 
@@ -51,108 +54,136 @@ ListLoadedLibraries = function(){
 
 ```
 
-
-
-### Listing what functions the JSON libraries in R have
-
-
+### Writing a function to get the Time dimenson from the glider netCDF file
+The following function gets the time dimension from the glider netCDF file and converts it from double to Unix time. The fucnction also extracts the time stamp and the date as well.
+This function returns a dataframe that has the formatted time in addition the timestamp and the date.
+This function takes an ncdf4 object as an argument.
 ```{r}
-# ListLoadedLibraries()
+formatTimeDim <- function(file){
+    tryCatch(
+        expr = {
+            # Getting the time dimension
+            time = file$dim$TIME
+            # Formatting time
+            time_formatted = as.POSIXct(time$vals, origin="1970-01-01")
+            # Extracting the time stamp from the unix time object
+            timeStamp = format(time_formatted,'%H:%M:%S')
+            # Extracting the date from the unix time object
+            date = as.Date(time_formatted)
+            # Combining the formatted time, the time stamp and the date in one data frame
+            all = cbind.data.frame(time_formatted, timeStamp, date)
+            
+            message('The time dimension has been successfully formatted!')
+          # returning the dataframe
+          return(all)
+            
+        },
+        error = function(e){
+            message('Caught an error!')
+            print(e)
+        },
+        warning = function(w){
+            message('Caught an warning!')
+            print(w)
+        }
+    )    
+}
+```
 
-``` 
+### Combining lat and long with time
 
-### The following function extracts the minimum bounding box of the netCDF file into a json file
+This function should return a dataframe that has the lat, lon, the time formatted, time stamp and date with no NA data.
 ```{r}
-getMinBBox = function(filePath){
-  
+combineLatLongWithTime <- function(filePath){
+    tryCatch(
+        expr = {
+              # Reading the file
+              file = nc_open(file_Path)
+              
+              # Getting the latitude and longitude
+              lon = ncvar_get(file,"LONGITUDE")
+              lat = ncvar_get(file,"LATITUDE")
+              
+              # Calling the time function to get the dataframe that has the time formatted
+              time = formatTimeDim(file)
+              
+              # Combining the time data frame with lat and long. This dataframe has NA values
+              dataframe = cbind.data.frame(lat, lon, time)
+              
+              
+              cat(bold("The number of NA this file has is: ", sum(is.na(dataframe))))
+              cat("\n")
+              
+              # removing NA values
+              dataframe_No_NA = dataframe %>% drop_na()
+              
+              return(dataframe_No_NA)
+            
+            message("dataframe successfully created!")
+        },
+        error = function(e){
+            message('Caught an error!')
+            print(e)
+        },
+        warning = function(w){
+            message('Caught an warning!')
+            print(w)
+        }
+    )    
 }
 
-``` 
+```
 
-### Opening the netCDF file and getting the lattitude and longitude
+
+### Providing the path to the netCDF file
 ```{r}
 # This is where the netCDF data files reside
 netCDF_Data_Files_Path = "D:/University/WWU/WWU 5/Task 1/Reading netCDF data using R/"
 # This is the files that needs to be read
-netCDF_File_Name = "amerigo_coconet_R.nc"
+netCDF_File_Name = "wallis_mooset01_R.nc"
 # This is the complete path to the netCDF file that is being read
 file_Path = paste0(netCDF_Data_Files_Path,netCDF_File_Name)
-#Reading the file
-file = nc_open(file_Path)
-# Getting the latitude and longitude
-lon = ncvar_get(file,"LONGITUDE")
-lat = ncvar_get(file,"LATITUDE")
-``` 
+```
 
 
+```{r}
+lat_lon_time_No_NA = combineLatLongWithTime(file_Path)
+```
 ### Getting the min bounding box using the library sp
 ```{r}
-# Combining the lat and lon in a dataframe
-lat_lon = cbind.data.frame(lat,lon)
-# Changing the column names of the dataframe
-names(lat_lon)[1] = "point.x"
-names(lat_lon)[2] = "point.y"
 # Converting the dataframe to a SpatialPoints object
-lat_lon_spatial = SpatialPoints(lat_lon)
+lat_lon_spatial = SpatialPoints(lat_lon_time_No_NA %>% select(1:2))
 # Applying the bbox function
 bb_sp = bbox(lat_lon_spatial)
 
-head(lat_lon)
+head(lat_lon_spatial)
 bb_sp
 ```
-
 ### Getting the bbox using the library shotGroups
 This function also returns the width and height of the bounding box. Since the projection is WGS84. This information is not useful.
 ```{r}
+lat_lon = lat_lon_time_No_NA %>% select(1:2)
+names(lat_lon)[1] = "point.x"
+names(lat_lon)[2] = "point.y"
 bb = getBoundingBox(lat_lon)
 bb
 ```
 
-### Getting the minimum and the maximum of the lat and lon
-This is to check what the functions above are returning.
-```{r}
-range(lat)
-range(lon)
-```
-
-### Getting the minimum bounding box
-This function returns the minimum bounding box but it returns NULL. I was not able to figure out what the problem is.
-
-```{r}
-x = getMinBBox(lat_lon)
-x
-```
-
-```{r}
-test = cbind(lat,lon)
-y = getMinBBox(test)
-y
-```
-
-
-
-
-
 
 ## Plotting the track of the netCDF file 
 
+I am not sure how to select the first tow colomns of the dataframe that has lat, lon, time......
+is it better if I put lat,lon in a seperate dataframe????
+It looks to me that lat_lon_time_No_NA %>% select(1:2) makes things more complicated!!!
 ```{r}
-# Getting the time
-time_D = file$dim$TIME
-# Formatting the time
-time_D_formatted = as.POSIXct(time_D$vals, origin="1970-01-01")
 # Setting a projection
 crs = CRS("+proj=longlat +datum=WGS84")
-```
-
-```{r}
 # Creating an STIDF object
-stidf = STIDF(SpatialPoints(cbind(lat,lon),crs), time_D_formatted, data.frame(lat_lon))
+stidf = STIDF(SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs), lat_lon_time_No_NA$time_formatted, data.frame(lat_lon_time_No_NA %>% select(1:2)))
 # Creating a track object
 glider_track = Track(stidf)
 plot(glider_track)
 ```
-
 ```{r}
 # Accessing the coordinates of the Track object
 # A1@data[,1]
@@ -161,34 +192,101 @@ plot(glider_track)
  leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2])
 ```
 
+### Getting the first value of each day of the data available in the netCDF file 
+
+What I thought of is splitting the dataframe that has all the days in the netCDF file into seperate dataframes each containing the measurement for each day. The first row of each dataframe is then extracted to get the first measurement of that day.
+```{r}
+# Splitting the dataframe based on date
+# This results in a list of dataframes
+list = split(lat_lon_time_No_NA, lat_lon_time_No_NA$date)
+#This provides the first row of each day in the data frame
+first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
+
+# Plotting the glider track with labels
+leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addAwesomeMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_formatted)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```{r}
-# Getting the time stamp of the time available in the netCDF file
-timeStamp = format(time_D_formatted,'%H:%M:%S')
-# Getting the date of the time available in the netCDF file
-date = as.Date(time_D_formatted)
-# Combining the lat, lon, time , time stamp and the date in one dataframe
-lat_lon_time_dateframe = cbind.data.frame(lat, lon, time_D_formatted, timeStamp, date)
-
-head(lat_lon_time_dateframe)
 
 # !!! I tried this but it does not work !!!
 # I wanted to get the minimum date of each day in the dataframe
 # test %>% group_by(time_D_formatted) %>% filter(time_D_formatted == min(time_D_formatted))
 ```
 
+
+
+```{r}
+# Accessing the coordinates of the Track object
+# A1@data[,1]
+# A1@data[,2]
+# Ploting the glider track using leflet
+# leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2])
+```
+
+
+
+
+
 ### Getting the first date of each day through looping the time column
 This is not effecient at all and R crashed when I tried it.
 ```{r}
-time_array = lat_lon_time_dateframe[,3]
-head(time_array)
+#time_array = lat_lon_time_dateframe[,3]
+#head(time_array)
 
 
 #Getting the first value of the arry
-first_value = time_array[1]
+#first_value = time_array[1]
 
-as.Date(ymd_hms(first_value))
+#as.Date(ymd_hms(first_value))
 
 
 #for(i in time_array){
@@ -196,36 +294,7 @@ as.Date(ymd_hms(first_value))
 #}
 ```
 
-### Trying to add the coordinated of the labels that should be added to the leaflet map manually
-Adding the coordinates to the addMarkers using coordinate1[1] did not work. I had to hard code the coordinates.
 
-This section extracts the coordinates of the first value of each day manually. The labels are also manually added to the leaflet map.
-```{r}
-# manual_labels = data.frame("lat", "lon", "time_formated")
-
-coordinate1 = c(as.double(41.66751),	as.double(17.06750),	"2013-05-15 14:14:48")
-coordinate2 = c("41.69140",	"17.09850",	"2013-05-16 02:00:00")
-  
-leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(lng = 17.06750,
-                                                                                              lat = 41.66751,
-                                                                                              label = coordinate1[3],
-                                                                                            labelOptions = labelOptions(noHide =T)) %>% addMarkers(lng = 17.09850, lat = 41.69140, label = coordinate2[3])
-```
-
-### Getting the first value of each day of the data available in the netCDF file 
-
-What I thought of is splitting the dataframe that has all the days in the netCDF file into seperate dataframes each containing the measurement for each day. The first row of each dataframe is then extracted to get the first measurement of that day.
-
-```{r}
-# Splitting the dataframe based on date
-# This results in a list of dataframes
-list = split(lat_lon_time_dateframe, lat_lon_time_dateframe$date)
-#This provides the first row of each day in the data frame
-first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
-
-# Plotting the glider track with labels
-leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_D_formatted)
-```
 
 ### Adding the last value of the last day to the labels dataframe
 ```{r}
@@ -246,7 +315,7 @@ leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glid
 
 ```{r}
 # This provides a summary of the dataframe based on the date
-lat_lon_time_dateframe %>% group_split(date) %>% map(summary)
+#lat_lon_time_dateframe %>% group_split(date) %>% map(summary)
 ```
 
 
