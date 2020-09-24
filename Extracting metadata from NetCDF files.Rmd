@@ -80,7 +80,7 @@ combineLatLongWithTime <- function(filePath){
     tryCatch(
         expr = {
               # Reading the file
-              file = nc_open(file_Path)
+              file = nc_open(filePath)
               
               # Getting the latitude and longitude
               lon = ncvar_get(file,"LONGITUDE")
@@ -165,44 +165,72 @@ plotMissionTrackWithLabels = function(lat_lon_time_No_NA){
 ### Providing the path to the netCDF file
 ```{r}
 # This is where the netCDF data files reside
-netCDF_Data_Files_Path = "D:/University/WWU/WWU 5/Task 1/Reading netCDF data using R/"
+netCDF_Data_Files_Path = "D:/University/WWU/WWU 5/netCDF sample files/"
+```
+
+### Testing plotting the mission track for multiple files
+#### File 1
+```{r}
 # This is the files that needs to be read
-netCDF_File_Name = "wallis_mooset01_R.nc"
+netCDF_File1_Name = "wallis_mooset01_R.nc"
 # This is the complete path to the netCDF file that is being read
-file_Path = paste0(netCDF_Data_Files_Path,netCDF_File_Name)
-```
+file_Path_File1 = paste0(netCDF_Data_Files_Path,netCDF_File1_Name)
 
+lat_lon_time_No_NA_File1 = combineLatLongWithTime(file_Path_File1)
+
+plotMissionTrack(lat_lon_time_No_NA_File1)
+
+x = getMissionTrackLabels(lat_lon_time_No_NA_File1)
+
+plotMissionTrackWithLabels(lat_lon_time_No_NA_File1)
+
+```
+#### File 2
+```{r}
+# This is the files that needs to be read
+netCDF_File2_Name = "sg558_fram_jun2013_R.nc"
+# This is the complete path to the netCDF file that is being read
+file_Path_File2 = paste0(netCDF_Data_Files_Path,netCDF_File2_Name)
+
+lat_lon_time_No_NA_File2 = combineLatLongWithTime(file_Path_File2)
+
+plotMissionTrack(lat_lon_time_No_NA_File2)
+
+x2 = getMissionTrackLabels(lat_lon_time_No_NA_File2)
+
+plotMissionTrackWithLabels(lat_lon_time_No_NA_File2)
+```
 
 ```{r}
-lat_lon_time_No_NA = combineLatLongWithTime(file_Path)
+
 ```
 
 ```{r}
-plotMissionTrack(lat_lon_time_No_NA)
+
 ```
 
 ```{r}
-x = getMissionTrackLabels(lat_lon_time_No_NA)
+
 ```
 
-```{r}
-plotMissionTrackWithLabels(lat_lon_time_No_NA)
-```
+
+
+
 
 ### Getting the min bounding box using the library sp
 ```{r}
 # Converting the dataframe to a SpatialPoints object
-lat_lon_spatial = SpatialPoints(lat_lon_time_No_NA %>% select(1:2))
+lat_lon_spatial_file1 = SpatialPoints(lat_lon_time_No_NA_File1 %>% select(1:2))
 # Applying the bbox function
-bb_sp = bbox(lat_lon_spatial)
+bb_sp = bbox(lat_lon_spatial_file1)
 
-head(lat_lon_spatial)
+head(lat_lon_spatial_file1)
 bb_sp
 ```
 ### Getting the bbox using the library shotGroups
 This function also returns the width and height of the bounding box. Since the projection is WGS84. This information is not useful.
 ```{r}
-lat_lon = lat_lon_time_No_NA %>% select(1:2)
+lat_lon = lat_lon_time_No_NA_File1 %>% select(1:2)
 names(lat_lon)[1] = "point.x"
 names(lat_lon)[2] = "point.y"
 bb = getBoundingBox(lat_lon)
