@@ -1,0 +1,53 @@
+---
+title: "Listing the functions of the netCDF libraries"
+author: "Fadi Moubayed"
+date: "9/24/2020"
+output: html_document
+---
+
+### Loading packages
+```{r message=FALSE,warning=FALSE}
+# Available netCDF libraires
+
+
+require(ncdf4)
+require(ncdf4.helpers)
+require(tidync)
+require(RNetCDF)
+require(ncdfgeom)
+require(stars)
+```
+
+
+### The following function lists the functions available in the loaded libraries
+Extra libraries are also being listed using this function
+```{r}
+ListLoadedLibrariesFunctions = function(){
+  # Listing the default libraries. These do not need to be listed
+  defaultLibraries = list("stats","graphics" ,"grDevices","utils","datasets" ,"methods","base")
+  # Listing the loaded libraries
+  loadedLibraries = (.packages())
+  # Getting the loaded libraries only
+  LoadedlibrariesOnly = setdiff(loadedLibraries, defaultLibraries)
+  
+  # Adding package: to the names of the libraries
+  libraries1= paste0("package:", LoadedlibrariesOnly)
+  sapply(libraries1, ls)
+}
+
+```
+
+```{r}
+#ListLoadedLibrariesFunctions()
+```
+
+### Adding the libraries that need to be listed maually
+The libraries are added manually to a list and then the functions are listed.
+The libararies must be loaded otherwise they will not be listed and an error will be returned.
+```{r}
+libraries = c("ncdf4", "ncdf4.helpers", "tidync","RNetCDF", "ncdfgeom", "stars")
+#adding package: to the names of the libraries
+libraries1= paste0("package:", libraries)
+sapply(libraries1, ls)
+```
+
