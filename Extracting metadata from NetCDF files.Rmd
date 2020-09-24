@@ -36,24 +36,6 @@ require(crayon)
 ```
 
 
-
-### The following function lists the functions available in the loaded libraries
-```{r}
-ListLoadedLibraries = function(){
-  # Listing the default libraries. These do not need to be listed
-  defaultLibraries = list("stats","graphics" ,"grDevices","utils","datasets" ,"methods","base")
-  # Listing the loaded libraries
-  loadedLibraries = (.packages())
-  # Getting the loaded libraries only
-  LoadedlibrariesOnly = setdiff(loadedLibraries, defaultLibraries)
-  
-  # Adding package: to the names of the libraries
-  libraries1= paste0("package:", LoadedlibrariesOnly)
-  sapply(libraries1, ls)
-}
-
-```
-
 ### Writing a function to get the Time dimenson from the glider netCDF file
 The following function gets the time dimension from the glider netCDF file and converts it from double to Unix time. The fucnction also extracts the time stamp and the date as well.
 This function returns a dataframe that has the formatted time in addition the timestamp and the date.
@@ -134,6 +116,51 @@ combineLatLongWithTime <- function(filePath){
 
 ```
 
+### A function to plot the track of the netCDF file
+This function takes the a datafram that has lat, lon, time_formatted, time stamp and date as an argument. This is the output of the function combineLatLongWithTime
+I am not sure how to select the first tow colomns of the dataframe that has lat, lon, time......
+is it better if I put lat,lon in a seperate dataframe????
+It looks to me that lat_lon_time_No_NA %>% select(1:2) makes things more complicated!!!
+```{r}
+plotMissionTrack = function(lat_lon_time_No_NA){
+  # Setting a projection
+  crs = CRS("+proj=longlat +datum=WGS84")
+  # Creating an STIDF object
+  stidf = STIDF(SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs), lat_lon_time_No_NA$time_formatted, data.frame(lat_lon_time_No_NA %>% select(1:2)))
+  # Creating a track object
+  glider_track = Track(stidf)
+  # plotting the map
+   return(leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]))
+}
+```
+
+### A function to get the first value of each day in the dataframe
+This function also takes a dataframe that has lat, lon, time_fomratted, timestamp and date as an input. This is the output of the function combineLatLongWithTime.
+```{r}
+getMissionTrackLabels = function(lat_lon_time_No_NA){
+  # Splitting the dataframe based on date
+  # This results in a list of dataframes
+  list = split(lat_lon_time_No_NA, lat_lon_time_No_NA$date)
+  #This provides the first row of each day in the data frame
+  first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
+  return(first_days)
+}
+
+
+```
+
+### A function to plot the mission track with labels
+I'm still thinking of plotting the first value of the mission in green and the last value in red. I think this requiers extracting the first vlaue in a seperate list or a dataframe and the same for the last value and then add them to the plotting function.
+```{r}
+plotMissionTrackWithLabels = function(lat_lon_time_No_NA){
+  track = plotMissionTrack(lat_lon_time_No_NA)
+  first_days = getMissionTrackLabels(lat_lon_time_No_NA)
+  return (track %>% addAwesomeMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_formatted))
+}
+
+
+```
+
 
 ### Providing the path to the netCDF file
 ```{r}
@@ -149,6 +176,19 @@ file_Path = paste0(netCDF_Data_Files_Path,netCDF_File_Name)
 ```{r}
 lat_lon_time_No_NA = combineLatLongWithTime(file_Path)
 ```
+
+```{r}
+plotMissionTrack(lat_lon_time_No_NA)
+```
+
+```{r}
+x = getMissionTrackLabels(lat_lon_time_No_NA)
+```
+
+```{r}
+plotMissionTrackWithLabels(lat_lon_time_No_NA)
+```
+
 ### Getting the min bounding box using the library sp
 ```{r}
 # Converting the dataframe to a SpatialPoints object
@@ -170,27 +210,27 @@ bb
 ```
 
 
-## Plotting the track of the netCDF file 
 
-I am not sure how to select the first tow colomns of the dataframe that has lat, lon, time......
-is it better if I put lat,lon in a seperate dataframe????
-It looks to me that lat_lon_time_No_NA %>% select(1:2) makes things more complicated!!!
-```{r}
-# Setting a projection
-crs = CRS("+proj=longlat +datum=WGS84")
-# Creating an STIDF object
-stidf = STIDF(SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs), lat_lon_time_No_NA$time_formatted, data.frame(lat_lon_time_No_NA %>% select(1:2)))
-# Creating a track object
-glider_track = Track(stidf)
-plot(glider_track)
-```
-```{r}
-# Accessing the coordinates of the Track object
-# A1@data[,1]
-# A1@data[,2]
-# Ploting the glider track using leflet
- leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2])
-```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# This section is left as a reference in case I lost track of things. This shall be soon deleted after all the functions have been well defined
+
 
 ### Getting the first value of each day of the data available in the netCDF file 
 
@@ -198,119 +238,30 @@ What I thought of is splitting the dataframe that has all the days in the netCDF
 ```{r}
 # Splitting the dataframe based on date
 # This results in a list of dataframes
-list = split(lat_lon_time_No_NA, lat_lon_time_No_NA$date)
+#list = split(lat_lon_time_No_NA, lat_lon_time_No_NA$date)
 #This provides the first row of each day in the data frame
-first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
+#first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
 
 # Plotting the glider track with labels
-leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addAwesomeMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_formatted)
+#leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addAwesomeMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_formatted)
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-
-# !!! I tried this but it does not work !!!
-# I wanted to get the minimum date of each day in the dataframe
-# test %>% group_by(time_D_formatted) %>% filter(time_D_formatted == min(time_D_formatted))
-```
-
-
-
-```{r}
-# Accessing the coordinates of the Track object
-# A1@data[,1]
-# A1@data[,2]
-# Ploting the glider track using leflet
-# leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2])
-```
-
-
-
-
-
-### Getting the first date of each day through looping the time column
-This is not effecient at all and R crashed when I tried it.
-```{r}
-#time_array = lat_lon_time_dateframe[,3]
-#head(time_array)
-
-
-#Getting the first value of the arry
-#first_value = time_array[1]
-
-#as.Date(ymd_hms(first_value))
-
-
-#for(i in time_array){
-#  as.Date(ymd_hms(i))
-#}
-```
-
 
 
 ### Adding the last value of the last day to the labels dataframe
 ```{r}
 # Getting the last day
-last_day_df = as.data.frame(tail(list, n = 1))
+#last_day_df = as.data.frame(tail(list, n = 1))
 # Setting the name of the columns to the same names of the first_days dataframe
 # This makes it easier to combine both dataframes
-names(last_day_df) = colnames(first_days)
-last_day = tail(last_day_df, n=1)
+#names(last_day_df) = colnames(first_days)
+#last_day = tail(last_day_df, n=1)
 #Adding the last value of the last day to the first_days dataframe
-first_days_plus_last_value = rbind(first_days, last_day)
+#first_days_plus_last_value = rbind(first_days, last_day)
 ```
 
 ```{r}
 # Plotting the glider track with labels including the last vlaue of the last day
-leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(data = first_days_plus_last_value, lat = ~first_days_plus_last_value$lat, lng = ~first_days_plus_last_value$lon, label = first_days_plus_last_value$time_D_formatted)
+#leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(data = first_days_plus_last_value, lat = ~first_days_plus_last_value$lat, lng = ~first_days_plus_last_value$lon, label = first_days_plus_last_value$time_D_formatted)
 ```
 
 ```{r}
