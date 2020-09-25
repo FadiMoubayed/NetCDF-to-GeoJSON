@@ -161,56 +161,51 @@ plotMissionTrackWithLabels = function(lat_lon_time_No_NA){
 
 ```
 
+### A function that returns a list of plots. This includs the mission track and the mission track with labels 
+```{r}
+plotMissionTracks = function(filePath){
+  lat_lon_time_No_NA = combineLatLongWithTime(filePath)
+
+  MissionTrack = plotMissionTrack(lat_lon_time_No_NA)
+  
+  x3 = getMissionTrackLabels(lat_lon_time_No_NA)
+  
+  MissionTrackWithLabels = plotMissionTrackWithLabels(lat_lon_time_No_NA)
+  
+  return(list(MissionTrack, MissionTrackWithLabels))
+
+}
+```
 
 ### Providing the path to the netCDF file
 ```{r}
 # This is where the netCDF data files reside
 netCDF_Data_Files_Path = "D:/University/WWU/WWU 5/netCDF sample files/"
-```
 
-### Testing plotting the mission track for multiple files
-#### File 1
-```{r}
+#File1
 # This is the files that needs to be read
 netCDF_File1_Name = "wallis_mooset01_R.nc"
 # This is the complete path to the netCDF file that is being read
 file_Path_File1 = paste0(netCDF_Data_Files_Path,netCDF_File1_Name)
 
-lat_lon_time_No_NA_File1 = combineLatLongWithTime(file_Path_File1)
-
-plotMissionTrack(lat_lon_time_No_NA_File1)
-
-x = getMissionTrackLabels(lat_lon_time_No_NA_File1)
-
-plotMissionTrackWithLabels(lat_lon_time_No_NA_File1)
-
-```
-#### File 2
-```{r}
+#File2
 # This is the files that needs to be read
 netCDF_File2_Name = "sg558_fram_jun2013_R.nc"
 # This is the complete path to the netCDF file that is being read
 file_Path_File2 = paste0(netCDF_Data_Files_Path,netCDF_File2_Name)
 
-lat_lon_time_No_NA_File2 = combineLatLongWithTime(file_Path_File2)
-
-plotMissionTrack(lat_lon_time_No_NA_File2)
-
-x2 = getMissionTrackLabels(lat_lon_time_No_NA_File2)
-
-plotMissionTrackWithLabels(lat_lon_time_No_NA_File2)
+#File3
+# This is the files that needs to be read
+netCDF_File3_Name = "ideep02_0012_R.nc"
+# This is the complete path to the netCDF file that is being read
+file_Path_File3 = paste0(netCDF_Data_Files_Path,netCDF_File3_Name)
 ```
 
+### Testing plotting the mission track for multiple files
 ```{r}
-
-```
-
-```{r}
-
-```
-
-```{r}
-
+plotMissionTracks(file_Path_File1)
+plotMissionTracks(file_Path_File2)
+plotMissionTracks(file_Path_File3)
 ```
 
 
@@ -219,6 +214,7 @@ plotMissionTrackWithLabels(lat_lon_time_No_NA_File2)
 
 ### Getting the min bounding box using the library sp
 ```{r}
+lat_lon_time_No_NA_File1 = combineLatLongWithTime(file_Path_File1)
 # Converting the dataframe to a SpatialPoints object
 lat_lon_spatial_file1 = SpatialPoints(lat_lon_time_No_NA_File1 %>% select(1:2))
 # Applying the bbox function

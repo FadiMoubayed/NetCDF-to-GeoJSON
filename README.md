@@ -38,3 +38,5 @@ the lat, lon, time, timeStamp and date. The NA data is deleted from the datafram
 + I am not sure how to deal with the NA data. So far my approach deals with NA data
 assuming that the NA in the lat and long match the NA in the time dimension. The
 question that remains is what if the time dimension has NA that is not available in lat and lon? This is going to shift the measurement and mess up the dataframe.
+
++ With big files the processing is taking some time.
