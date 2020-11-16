@@ -1,4 +1,4 @@
-# Extracting-metadata-from-glider-NetCDF-files
+µ# Extracting-metadata-from-glider-NetCDF-files
 Extracts metadata from the glider NetCDF files into a JSON file using R
 
 ### Reading the netCDF files
@@ -19,7 +19,7 @@ all the coordinates of the track.
 + If a variable includes NA data in addition to the number of NA the variable has
 + The variables available in the netCDF file
 + The projection of the netCDF file (Not available in the file!)
-nc.get.proj4.string did not return anything!
+nc.get.proj4.string did not return anything!µ
 
 ### Extracting the mission track
 This step extracts the mission track using the library trajectories and spacetime.

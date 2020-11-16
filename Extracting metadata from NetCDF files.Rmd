@@ -37,9 +37,9 @@ require(crayon)
 
 
 ### Writing a function to get the Time dimenson from the glider netCDF file
-The following function gets the time dimension from the glider netCDF file and converts it from double to Unix time. The fucnction also extracts the time stamp and the date as well.
+The following function gets the time dimension from the glider netCDF file and converts it from double to Unix time. The function also extracts the time stamp and the date as well.
 This function returns a dataframe that has the formatted time in addition the timestamp and the date.
-This function takes an ncdf4 object as an argument.
+This function takes a ncdf4 object as an argument.
 ```{r}
 formatTimeDim <- function(file){
     tryCatch(
@@ -146,7 +146,6 @@ getMissionTrackLabels = function(lat_lon_time_No_NA){
   return(first_days)
 }
 
-
 ```
 
 ### A function to plot the mission track with labels
@@ -180,7 +179,7 @@ plotMissionTracks = function(filePath){
 ### Providing the path to the netCDF file
 ```{r}
 # This is where the netCDF data files reside
-netCDF_Data_Files_Path = "D:/University/WWU/WWU 5/netCDF sample files/"
+netCDF_Data_Files_Path = "/home/fadi/DataX1/University/WWU/WWU 5/netCDF sample files/"
 
 #File1
 # This is the files that needs to be read
