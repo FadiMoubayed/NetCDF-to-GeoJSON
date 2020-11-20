@@ -484,10 +484,16 @@ require(crayon)</code></pre>
 <h3>A function to plot the track of the netCDF file</h3>
 <p>This function takes the a datafram that has lat, lon, time_formatted, time stamp and date as an argument. This is the output of the function combineLatLongWithTime I am not sure how to select the first tow colomns of the dataframe that has lat, lon, time…… is it better if I put lat,lon in a seperate dataframe???? It looks to me that lat_lon_time_No_NA %&gt;% select(1:2) makes things more complicated!!!</p>
 <pre class="r"><code>plotMissionTrack = function(lat_lon_time_No_NA){
-  # Setting a projection
+  # Setting the reference system
   crs = CRS(&quot;+proj=longlat +datum=WGS84&quot;)
+  # Creating a spatial points object
+  sp = SpatialPoints(lat_lon_time_No_NA %&gt;% select(1:2),crs)
+  # Getting time
+  time = lat_lon_time_No_NA$time_formatted
+  # Getting data
+  data = data.frame(lat_lon_time_No_NA %&gt;% select(1:2))
   # Creating an STIDF object
-  stidf = STIDF(SpatialPoints(lat_lon_time_No_NA %&gt;% select(1:2),crs), lat_lon_time_No_NA$time_formatted, data.frame(lat_lon_time_No_NA %&gt;% select(1:2)))
+  stidf = STIDF(sp, time, data)
   # Creating a track object
   glider_track = Track(stidf)
   # plotting the map
@@ -508,7 +514,7 @@ require(crayon)</code></pre>
 </div>
 <div id="a-function-to-plot-the-mission-track-with-labels" class="section level3">
 <h3>A function to plot the mission track with labels</h3>
-<p>I’m still thinking of plotting the first value of the mission in green and the last value in red. I think this requiers extracting the first vlaue in a seperate list or a dataframe and the same for the last value and then add them to the plotting function.</p>
+<p>I’m still thinking of plotting the first value of the mission in green and the last value in red. I think this requiers extracting the first value in a separate list or a dataframe and the same for the last value and then add them to the plotting function.</p>
 <pre class="r"><code>plotMissionTrackWithLabels = function(lat_lon_time_No_NA){
   track = plotMissionTrack(lat_lon_time_No_NA)
   first_days = getMissionTrackLabels(lat_lon_time_No_NA)
@@ -623,35 +629,24 @@ bb</code></pre>
 ## $diag
 ## [1] 2.213529</code></pre>
 </div>
-<div id="this-section-is-left-as-a-reference-in-case-i-lost-track-of-things.-this-shall-be-soon-deleted-after-all-the-functions-have-been-well-defined" class="section level1">
-<h1>This section is left as a reference in case I lost track of things. This shall be soon deleted after all the functions have been well defined</h1>
-<div id="getting-the-first-value-of-each-day-of-the-data-available-in-the-netcdf-file" class="section level3">
-<h3>Getting the first value of each day of the data available in the netCDF file</h3>
-<p>What I thought of is splitting the dataframe that has all the days in the netCDF file into seperate dataframes each containing the measurement for each day. The first row of each dataframe is then extracted to get the first measurement of that day.</p>
-<pre class="r"><code># Splitting the dataframe based on date
-# This results in a list of dataframes
-#list = split(lat_lon_time_No_NA, lat_lon_time_No_NA$date)
-#This provides the first row of each day in the data frame
-#first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
-
-# Plotting the glider track with labels
-#leaflet() %&gt;%addTiles() %&gt;% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %&gt;% addAwesomeMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_formatted)</code></pre>
-</div>
-<div id="adding-the-last-value-of-the-last-day-to-the-labels-dataframe" class="section level3">
-<h3>Adding the last value of the last day to the labels dataframe</h3>
-<pre class="r"><code># Getting the last day
-#last_day_df = as.data.frame(tail(list, n = 1))
-# Setting the name of the columns to the same names of the first_days dataframe
-# This makes it easier to combine both dataframes
-#names(last_day_df) = colnames(first_days)
-#last_day = tail(last_day_df, n=1)
-#Adding the last value of the last day to the first_days dataframe
-#first_days_plus_last_value = rbind(first_days, last_day)</code></pre>
-<pre class="r"><code># Plotting the glider track with labels including the last vlaue of the last day
-#leaflet() %&gt;%addTiles() %&gt;% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %&gt;% addMarkers(data = first_days_plus_last_value, lat = ~first_days_plus_last_value$lat, lng = ~first_days_plus_last_value$lon, label = first_days_plus_last_value$time_D_formatted)</code></pre>
-<pre class="r"><code># This provides a summary of the dataframe based on the date
-#lat_lon_time_dateframe %&gt;% group_split(date) %&gt;% map(summary)</code></pre>
-</div>
+<div id="generalizing-the-mission-track" class="section level3">
+<h3>Generalizing the mission track</h3>
+<p>I am modifying the function plotMissionTrack to only get the track object instead of plotting it</p>
+<p>This function takes the a datafram that has lat, lon, time_formatted, time stamp and date as an argument. This is the output of the function combineLatLongWithTime I am not sure how to select the first tow colomns of the dataframe that has lat, lon, time…… is it better if I put lat,lon in a seperate dataframe???? It looks to me that lat_lon_time_No_NA %&gt;% select(1:2) makes things more complicated!!!</p>
+<pre class="r"><code>getMissionTrack = function(lat_lon_time_No_NA){
+  # Setting the reference system
+  crs = CRS(&quot;+proj=longlat +datum=WGS84&quot;)
+  # Creating an STIDF object
+  stidf = STIDF(SpatialPoints(lat_lon_time_No_NA %&gt;% select(1:2),crs), lat_lon_time_No_NA$time_formatted, data.frame(lat_lon_time_No_NA %&gt;% select(1:2)))
+  # Creating a track object
+  glider_track = Track(stidf)
+  # plotting the map
+   return(glider_track)
+}</code></pre>
+<pre class="r"><code>lat_lon_time_No_NA_File1= combineLatLongWithTime(file_Path_File3)</code></pre>
+<pre><code>## The time dimension has been successfully formatted!</code></pre>
+<pre><code>## The number of NA this file has is:  64</code></pre>
+<pre class="r"><code>mission_Track_File3 = getMissionTrack(lat_lon_time_No_NA_File1)</code></pre>
 </div>
 
 

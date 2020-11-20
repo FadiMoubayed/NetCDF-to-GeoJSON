@@ -123,10 +123,16 @@ is it better if I put lat,lon in a seperate dataframe????
 It looks to me that lat_lon_time_No_NA %>% select(1:2) makes things more complicated!!!
 ```{r}
 plotMissionTrack = function(lat_lon_time_No_NA){
-  # Setting a projection
+  # Setting the reference system
   crs = CRS("+proj=longlat +datum=WGS84")
+  # Creating a spatial points object
+  sp = SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs)
+  # Getting time
+  time = lat_lon_time_No_NA$time_formatted
+  # Getting data
+  data = data.frame(lat_lon_time_No_NA %>% select(1:2))
   # Creating an STIDF object
-  stidf = STIDF(SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs), lat_lon_time_No_NA$time_formatted, data.frame(lat_lon_time_No_NA %>% select(1:2)))
+  stidf = STIDF(sp, time, data)
   # Creating a track object
   glider_track = Track(stidf)
   # plotting the map
@@ -149,15 +155,13 @@ getMissionTrackLabels = function(lat_lon_time_No_NA){
 ```
 
 ### A function to plot the mission track with labels
-I'm still thinking of plotting the first value of the mission in green and the last value in red. I think this requiers extracting the first vlaue in a seperate list or a dataframe and the same for the last value and then add them to the plotting function.
+I'm still thinking of plotting the first value of the mission in green and the last value in red. I think this requiers extracting the first value in a separate list or a dataframe and the same for the last value and then add them to the plotting function.
 ```{r}
 plotMissionTrackWithLabels = function(lat_lon_time_No_NA){
   track = plotMissionTrack(lat_lon_time_No_NA)
   first_days = getMissionTrackLabels(lat_lon_time_No_NA)
   return (track %>% addAwesomeMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_formatted))
 }
-
-
 ```
 
 ### A function that returns a list of plots. This includs the mission track and the mission track with labels 
@@ -249,62 +253,95 @@ bb
 
 
 
+### Generalizing the mission track
+I am modifying the function plotMissionTrack to only get the track object instead of plotting it
 
 
+This function takes the a datafram that has lat, lon, time_formatted, time stamp and date as an argument. This is the output of the function combineLatLongWithTime
+I am not sure how to select the first tow colomns of the dataframe that has lat, lon, time......
+is it better if I put lat,lon in a seperate dataframe????
+It looks to me that lat_lon_time_No_NA %>% select(1:2) makes things more complicated!!!
 
-# This section is left as a reference in case I lost track of things. This shall be soon deleted after all the functions have been well defined
-
-
-### Getting the first value of each day of the data available in the netCDF file 
-
-What I thought of is splitting the dataframe that has all the days in the netCDF file into seperate dataframes each containing the measurement for each day. The first row of each dataframe is then extracted to get the first measurement of that day.
 ```{r}
-# Splitting the dataframe based on date
-# This results in a list of dataframes
-#list = split(lat_lon_time_No_NA, lat_lon_time_No_NA$date)
-#This provides the first row of each day in the data frame
-#first_days = do.call(rbind, (lapply(list, function(x) x[1,])))
+getMissionTrack = function(lat_lon_time_No_NA){
+  # Setting the reference system
+  crs = CRS("+proj=longlat +datum=WGS84")
+  # Creating a spatial points object
+  sp = SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs)
+  # Getting time
+  time = lat_lon_time_No_NA$time_formatted
+  # Providing the mission's coordinates
+  data = data.frame(lat_lon_time_No_NA %>% select(1:2))
+  # Creating an STIDF object
+  stidf = STIDF(sp, time, data)
+  # Creating a track object
+  glider_track = Track(stidf)
+  # Returning a track object
+  return(glider_track)
+}
 
-# Plotting the glider track with labels
-#leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addAwesomeMarkers(data = first_days, lat = ~first_days$lat, lng = ~first_days$lon, label = first_days$time_formatted)
 ```
-
-
-### Adding the last value of the last day to the labels dataframe
 ```{r}
-# Getting the last day
-#last_day_df = as.data.frame(tail(list, n = 1))
-# Setting the name of the columns to the same names of the first_days dataframe
-# This makes it easier to combine both dataframes
-#names(last_day_df) = colnames(first_days)
-#last_day = tail(last_day_df, n=1)
-#Adding the last value of the last day to the first_days dataframe
-#first_days_plus_last_value = rbind(first_days, last_day)
-```
-
-```{r}
-# Plotting the glider track with labels including the last vlaue of the last day
-#leaflet() %>%addTiles() %>% addPolylines(lat = glider_track@data[,1], lng = glider_track@data[,2]) %>% addMarkers(data = first_days_plus_last_value, lat = ~first_days_plus_last_value$lat, lng = ~first_days_plus_last_value$lon, label = first_days_plus_last_value$time_D_formatted)
-```
-
-```{r}
-# This provides a summary of the dataframe based on the date
-#lat_lon_time_dateframe %>% group_split(date) %>% map(summary)
+lat_lon_time_No_NA_File1= combineLatLongWithTime(file_Path_File3)
+mission_Track_File3 = getMissionTrack(lat_lon_time_No_NA_File1)
+mission_Track_File3_generalized = generalize(mission_Track_File3, distance = 100)
 ```
 
 
 ```{r}
-
+# plot(mission_Track_File3)
+plot(mission_Track_File3_generalized, main = "The generalized track")
+plot(mission_Track_File3, main = "The whole track")
 ```
+
+This function plots the generalized mission track
+The generalize function in trajectories is throwing me the following error:
+          "CRS object has comment, which is lost in output"
 
 ```{r}
+plotMissionTrackGeneralized = function(lat_lon_time_No_NA){
+  # Setting the reference system
+  crs = CRS("+proj=longlat +datum=WGS84")
+  # Creating a spatial points object
+  sp = SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs)
+  # Getting time
+  time = lat_lon_time_No_NA$time_formatted
+  # Getting data
+  data = data.frame(lat_lon_time_No_NA %>% select(1:2))
+  # Creating an STIDF object
+  stidf = STIDF(sp, time, data)
+  # Creating a track object
+  glider_track = Track(stidf)
+  # Generalizing the track
+  glider_track_generalized = generalize(glider_track, distance = 100)
+  # plotting the map
+   return(leaflet() %>%addTiles() %>% addPolylines(lat = glider_track_generalized@data[,1], lng = glider_track_generalized@data[,2]))
+}
 
+plotMissionTrackGeneralized(lat_lon_time_No_NA_File1)
 ```
 
 
-```{r}
 
-```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
 
