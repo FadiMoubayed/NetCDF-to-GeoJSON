@@ -52,12 +52,16 @@ question that remains is what if the time dimension has NA that is not available
 + With big files the processing is taking some time.
 + The code still needs to be organized
 + Pay attention to the order of lat, lon, time, date, timestamp
-+ I need to have 2 geneal parts one for getting metadata and one for plotting and testing
++ I need to have 2 general parts one for getting metadata and one for plotting and testing
 + Generalizing tracks is throwing an error due to the reference system
+"CRS object has comment, which is lost in output"
 + Some labels (the first measurement of the day) are given at 2:00 a.m.
++ When I type the track object in the console, I get information such as the minimum bounding box and the time span of the mission. The problem is I don't know how to get that information into a variable.
 
 #### Next steps
 + Add a function to genralize the mission track
 + The plotting functions do not work in R markdown. I need to fix This
 + Add getting the name of the variables to the metadata
 + Organize the section testing the functions
++ I need to decide on the form in which metadata extracted using the written functions is saved. Some libraries for writing GeoJson in R require objects to be saved in lists (S3 objects)
++ Add a function to get the number of NA in the netcdf file if any

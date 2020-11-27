@@ -153,8 +153,15 @@ getMissionTrackLabels = function(lat_lon_time_No_NA){
 }
 ```
 ### Generalizing the mission track
-This should be added!
-
+This function should generalize the mission track.
+I still need to decide what method I should use for generalization. (distance or time)
+I also need to think what kind of structure I need to put the generalized track in.
+This function is not complete yet.
+```{r}
+generalizeMissionTrack = function(missionTrack){
+  generalize(missionTrack)
+}
+```
 ## 3. Plotting Tracks
 ### A function to plot the track of the netCDF file
 This function takes the output of the function getMissionTrack and plots it on a leaflet map in R.
@@ -178,25 +185,28 @@ plotMissionTrackWithLabels = function(lat_lon_time_No_NA, gliderTrack){
 }
 ```
 
-### A function that returns a list of plots. This includs the mission track and the mission track with labels
-This function is only meant for plotting the tracks and is not part of the meatdata that needs to be transported.
-This function does not work 
-```{r}
-plotMissionTracks = function(filePath){
-  lat_lon_time_No_NA = combineLatLongWithTime(filePath)
-  
-  MissionTrack = getMissionTrack(lat_lon_time_No_NA)
-  
-  missionTrackPlot = plotMissionTrack(MissionTrack)
-  
-  # x3 = getMissionTrackLabels(lat_lon_time_No_NA)
-  
-  MissionTrackWithLabels = plotMissionTrackWithLabels(lat_lon_time_No_NA, MissionTrack)
-  
-  return(list(MissionTrack, MissionTrackWithLabels))
+<!-- ### A function that returns a list of plots. This includs the mission track and the mission track with labels -->
+<!-- This function is only meant for plotting the tracks and is not part of the meatdata that needs to be transported. -->
+<!-- This function does not work -->
 
-}
-```
+
+<!-- ```{r} -->
+<!-- plotMissionTracks = function(filePath){ -->
+<!--   lat_lon_time_No_NA = combineLatLongWithTime(filePath) -->
+
+<!--   MissionTrack = getMissionTrack(lat_lon_time_No_NA) -->
+
+<!--   missionTrackPlot = plotMissionTrack(MissionTrack) -->
+
+<!--   # x3 = getMissionTrackLabels(lat_lon_time_No_NA) -->
+
+<!--   MissionTrackWithLabels = plotMissionTrackWithLabels(lat_lon_time_No_NA, MissionTrack) -->
+
+<!--   return(list(MissionTrack, MissionTrackWithLabels)) -->
+
+<!-- } -->
+<!-- ``` -->
+
 
 ## 4. Getting the minimum bounding box
 
@@ -267,11 +277,38 @@ netCDF_File3_Name = "ideep02_0012_R.nc"
 file_Path_File3 = paste0(netCDF_Data_Files_Path,netCDF_File3_Name)
 ```
 
-### Testing plotting the mission track for multiple files
+### Applying the functions
+#### File 1
+I need to ecnapsulate those steps into one function. This should be done after I finish extracting metadata.
 ```{r}
-plotMissionTracks(file_Path_File1)
-plotMissionTracks(file_Path_File2)
-plotMissionTracks(file_Path_File3)
+# Formatting time and getting lat and lon in one dataframe
+lat_lon_time_No_NA_File1 = combineLatLongWithTime(file_Path_File1)
+# Getting the mission track
+missionTrack_File1 = getMissionTrack(lat_lon_time_No_NA_File1)
+# Getting the mission track labels
+missionTrackLabels_File1 = getMissionTrackLabels(lat_lon_time_No_NA_File1)
+# Plotting the track
+plotMissionTrack(missionTrack_File1)
+# Plotting the track with labels
+plotMissionTrackWithLabels(lat_lon_time_No_NA_File1, missionTrack_File1)
+```
+
+### Testing plotting the mission track for multiple files
+This is to be deleted!!!
+```{r}
+#plotMissionTracks(file_Path_File1)
+#plotMissionTracks(file_Path_File2)
+#plotMissionTracks(file_Path_File3)
+```
+
+
+### Exampels of the genaralize function
+
+```{r}
+# Generalizing the track based on distance
+mission_Track_File1_generalized_distance = generalize(missionTrack_File1, distance = 100)
+# Generalizing the track based on time interval
+mission_Track_File1_generalized_timeInterval = generalize(missionTrack_File1, timeInterval = )
 ```
 
 
@@ -293,18 +330,6 @@ plotMissionTracks(file_Path_File3)
 
 
 
-
-
-
-
-
-
-
-```{r warning = FALSE}
-lat_lon_time_No_NA_File1= combineLatLongWithTime(file_Path_File3)
-mission_Track_File3 = getMissionTrack(lat_lon_time_No_NA_File1)
-mission_Track_File3_generalized = generalize(mission_Track_File3, distance = 100)
-```
 
 ### Getting the bbox using the library shotGroups
 This function also returns the width and height of the bounding box. Since the projection is WGS84. This information is not useful.
@@ -323,32 +348,32 @@ plot(mission_Track_File3_generalized, main = "The generalized track")
 plot(mission_Track_File3, main = "The whole track")
 ```
 
-This function plots the generalized mission track
-The generalize function in trajectories is throwing me the following error:
-          "CRS object has comment, which is lost in output"
-I don't think this function is necessary because there is already a function that plots Tracks which is called plotMissionTrack
-```{r warning = FALSE}
-plotMissionTrackGeneralized = function(lat_lon_time_No_NA){
-  # Setting the reference system
-  crs = CRS("+proj=longlat +datum=WGS84")
-  # Creating a spatial points object
-  sp = SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs)
-  # Getting time
-  time = lat_lon_time_No_NA$time_formatted
-  # Getting data
-  data = data.frame(lat_lon_time_No_NA %>% select(1:2))
-  # Creating an STIDF object
-  stidf = STIDF(sp, time, data)
-  # Creating a track object
-  glider_track = Track(stidf)
-  # Generalizing the track
-  glider_track_generalized = generalize(glider_track, distance = 100)
-  # plotting the map
-   return(leaflet() %>%addTiles() %>% addPolylines(lat = glider_track_generalized@data[,1], lng = glider_track_generalized@data[,2]))
-}
+<!-- This function plots the generalized mission track -->
+<!-- The generalize function in trajectories is throwing me the following error: -->
+<!--           "CRS object has comment, which is lost in output" -->
+<!-- I don't think this function is necessary because there is already a function that plots Tracks which is called plotMissionTrack -->
+<!-- ```{r warning = FALSE} -->
+<!-- plotMissionTrackGeneralized = function(lat_lon_time_No_NA){ -->
+<!--   # Setting the reference system -->
+<!--   crs = CRS("+proj=longlat +datum=WGS84") -->
+<!--   # Creating a spatial points object -->
+<!--   sp = SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs) -->
+<!--   # Getting time -->
+<!--   time = lat_lon_time_No_NA$time_formatted -->
+<!--   # Getting data -->
+<!--   data = data.frame(lat_lon_time_No_NA %>% select(1:2)) -->
+<!--   # Creating an STIDF object -->
+<!--   stidf = STIDF(sp, time, data) -->
+<!--   # Creating a track object -->
+<!--   glider_track = Track(stidf) -->
+<!--   # Generalizing the track -->
+<!--   glider_track_generalized = generalize(glider_track, distance = 100) -->
+<!--   # plotting the map -->
+<!--    return(leaflet() %>%addTiles() %>% addPolylines(lat = glider_track_generalized@data[,1], lng = glider_track_generalized@data[,2])) -->
+<!-- } -->
 
-plotMissionTrackGeneralized(lat_lon_time_No_NA_File1)
-```
+<!-- plotMissionTrackGeneralized(lat_lon_time_No_NA_File1) -->
+<!-- ``` -->
 
 
 

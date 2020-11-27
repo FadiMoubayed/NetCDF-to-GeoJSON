@@ -1,0 +1,35 @@
+---
+title: "Listing the functions of the GeoJSON libraries in R"
+author: "Fadi Moubayed"
+date: "24/11/2020"
+output: html_document
+---
+
+### Loading packages
+```{r message=FALSE,warning=FALSE}
+
+require(geojsonR)
+require(geojson)
+require(rgdal)
+```
+
+### The following function lists the functions available in the loaded libraries
+Extra libraries are also being listed using this function
+```{r}
+ListLoadedLibrariesFunctions = function(){
+  # Listing the default libraries. These do not need to be listed
+  defaultLibraries = list("stats","graphics" ,"grDevices","utils","datasets" ,"methods","base")
+  # Listing the loaded libraries
+  loadedLibraries = (.packages())
+  # Getting the loaded libraries only
+  LoadedlibrariesOnly = setdiff(loadedLibraries, defaultLibraries)
+  
+  # Adding package: to the names of the libraries
+  libraries1= paste0("package:", LoadedlibrariesOnly)
+  sapply(libraries1, ls)
+}
+
+```
+```{r}
+ListLoadedLibrariesFunctions()
+```
