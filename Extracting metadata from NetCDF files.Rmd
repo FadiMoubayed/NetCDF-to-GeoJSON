@@ -3,6 +3,8 @@ title: "Extracting metadata from the netCDF files"
 author: "Fadi Moubayed"
 date: "9/14/2020"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ### Loading packages
@@ -251,7 +253,7 @@ This is the old version of getting the bbox using the library sp where the path 
 ## 5. Testing the functions
 
 ## Testing the functions
-This part is for testing the functions
+This part is for testing the functions. These files are randomly chosen.
 
 ### Providing the path to the netCDF test file
 ```{r}
@@ -301,14 +303,94 @@ This is to be deleted!!!
 #plotMissionTracks(file_Path_File3)
 ```
 
+### Testing the generalize function
+This section applies some steps of the generalize function. Those steps are taken from the source code of the generalize function. I am attempting to understand how the function works in order to decide what generalozation method to use and what the value is.
 
+As an example the Track object of File1 is used.
+
+#### Questions regarding the Track class
+What does the endtime mean?
+"@endtime to store the end time when having
+generalised line geometries with one value per attribute for a set of points (otherwise, de-
+faults to the time defined in @time)" ??
+
+By default, distance, duration, speed
+and direction are computed as the connections data.??
+
+
+
+
+#### Checking the first section of the timeInterval
+##### Using time interval
+It looks like when using the timeInterval the generalized track has as many lines as defined in the time interval.
+
+t@time has the class "xts" "zoo"
+index(t@time) has the class "POSIXct" "POSIXt"
+typeof(t@time) is integer
+typeof(index(t@time)) is double
+
+the function cut categorizes the values of a continuous variable in different levels of a factor.
+The time the Track object has is divided into the number specified by the argument timeInterval.
+
+segmentLengths counts how many incidents each factor of the result of the cut function has.
+
+```{r}
+t = missionTrack_File1
+# time interval is 60                                                   seconds
+timeInterval = 60
+# Applying the steps
+    # The function index belongs to the zoo package
+    origin = index(t@time)
+    cut = cut(origin, timeInterval)
+    segmentLengths = rle(as.numeric(cut))$lengths
+# Checking the results
+    head(origin)
+    head(cut)
+    summary(cut)
+    head(segmentLengths)
+    length(origin)
+    length(cut)
+    length(segmentLengths)
+```
+##### Using distance
+```{r}
+t = missionTrack_File1
+distance = 100
+# It calculates the cumulative distance starting from the first point to each point
+origin = c(0, cumsum(t@connections$distance))
+# floor takes a single numeric argument x and returns a numeric vector containing the largest integers not greater than the corresponding elements of x.
+# floor() function returns the largest integer that is smaller than or equal to value passed to it as argument(i.e : rounds downs to the nearest integer).
+cut = floor(origin / distance)
+# This returns how many times each number in the cut object there is
+segmentLengths = rle(cut)$lengths
+
+
+toIndex = cumsum(segmentLengths)
+	segmentLengths_ = integer()
+	for(i in seq_along(segmentLengths)) {
+		if (i == length(segmentLengths)
+			|| (!missing(timeInterval) && origin[toIndex[i]] %in% seq(origin[1], origin[length(origin)], timeInterval))
+			|| (!missing(distance) && origin[toIndex[i]] > 0 && origin[toIndex[i]] %% distance == 0)
+			|| (!missing(n)))
+			segmentLengths_[i] = segmentLengths[i]
+		else { 
+			segmentLengths_[i] = segmentLengths[i] + 1
+			if(i == length(segmentLengths) - 1 && segmentLengths[i+1] == 1)
+				break()
+		}
+	}
+```
 ### Exampels of the genaralize function
+Questions:
+What does the distance represent in case of having lat and long?
+How are the tracks generalized based on a time interval?
+Should I include other parameters when using the function generalize?
 
 ```{r}
 # Generalizing the track based on distance
 mission_Track_File1_generalized_distance = generalize(missionTrack_File1, distance = 100)
 # Generalizing the track based on time interval
-mission_Track_File1_generalized_timeInterval = generalize(missionTrack_File1, timeInterval = )
+# mission_Track_File1_generalized_timeInterval <- generalize(missionTrack_File1, timeInterval = 60)
 ```
 
 
@@ -341,11 +423,11 @@ bb = getBoundingBox(lat_lon)
 bb
 ```
 
-
+### Plotting the track before and after the generalization
 ```{r}
 # plot(mission_Track_File3)
-plot(mission_Track_File3_generalized, main = "The generalized track")
-plot(mission_Track_File3, main = "The whole track")
+plot(mission_Track_File1_generalized_distance, main = "The generalized track")
+plot(missionTrack_File1, main = "The whole track")
 ```
 
 <!-- This function plots the generalized mission track -->
@@ -374,16 +456,6 @@ plot(mission_Track_File3, main = "The whole track")
 
 <!-- plotMissionTrackGeneralized(lat_lon_time_No_NA_File1) -->
 <!-- ``` -->
-
-
-
-
-
-
-
-
-
-
 
 
 
