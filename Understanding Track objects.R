@@ -1,6 +1,9 @@
-set.seed(10)
+library("manipulate")
 library("spacetime")
 library("sp")
+
+set.seed(10)
+
 t0 = as.POSIXct(as.Date("2013-09-30",tz="CET"))
 x = c(7,6,5,5,4,3,3)
 y = c(7,7,6,5,5,6,7)
@@ -86,7 +89,7 @@ plotGeneralize = function(Track, distance, tol){
 }
 
 #the slider does not appear here
-manipulate(plotGeneralize(missionTrack_File1, distance = d, tol = t),d = slider(1000,5000), tol = slider(0.001,0.5))
+manipulate(plotGeneralize(missionTrack_File1, distance = d, tol = t),d = slider(1000,100000), tol = slider(0.001,5))
 
 manipulate(plot(generalize(missionTrack_File1, distance = d)),d = slider(1000,1100))
 

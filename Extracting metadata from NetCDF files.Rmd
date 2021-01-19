@@ -32,7 +32,7 @@ library(lubridate)
 # ?? Not sure why I was using this
 library(tidyverse)
 
-# to format text in the console (does not format text in R markdown)
+# To format text in the console (does not format text in R markdown)
 require(crayon)
 
 ```
@@ -178,7 +178,7 @@ plotMissionTrack = function(gliderTrack){
 
 
 ### A function to plot the mission track with labels
-I'm still thinking of plotting the first value of the mission in green and the last value in red. I think this requiers extracting the first value in a separate list or a dataframe and the same for the last value and then add them to the plotting function.
+I'm still thinking of plotting the first value of the mission in green and the last value in red. I think this requires extracting the first value in a separate list or a dataframe and the same for the last value and then add them to the plotting function.
 ```{r}
 plotMissionTrackWithLabels = function(lat_lon_time_No_NA, gliderTrack){
   track = plotMissionTrack(gliderTrack)
@@ -187,67 +187,11 @@ plotMissionTrackWithLabels = function(lat_lon_time_No_NA, gliderTrack){
 }
 ```
 
-<!-- ### A function that returns a list of plots. This includs the mission track and the mission track with labels -->
-<!-- This function is only meant for plotting the tracks and is not part of the meatdata that needs to be transported. -->
-<!-- This function does not work -->
-
-
-<!-- ```{r} -->
-<!-- plotMissionTracks = function(filePath){ -->
-<!--   lat_lon_time_No_NA = combineLatLongWithTime(filePath) -->
-
-<!--   MissionTrack = getMissionTrack(lat_lon_time_No_NA) -->
-
-<!--   missionTrackPlot = plotMissionTrack(MissionTrack) -->
-
-<!--   # x3 = getMissionTrackLabels(lat_lon_time_No_NA) -->
-
-<!--   MissionTrackWithLabels = plotMissionTrackWithLabels(lat_lon_time_No_NA, MissionTrack) -->
-
-<!--   return(list(MissionTrack, MissionTrackWithLabels)) -->
-
-<!-- } -->
-<!-- ``` -->
-
-
 ## 4. Getting the minimum bounding box
 
 ### Getting the minimum bounding box
-There are many ways for getting the minimum bounding box
-  Creating a Track object includes having the time span and the minumum bounding box
-  The only problem is that I don't know how to get that information saved in a variable
-  When I create a Track object and type the object name in the console, I get the information but I don't know how   to save it in a new variable.
-  
-  The sp library has a function for getting the bbox but this includes creating a SpatialPoints object
-  
-  
-### Getting the min bounding box using the library sp
-I am not sure about whether I should provide the file path to this function and call the combineLatLongWithTime function inside this function or I should simply supply the lat_lon_time_No_NA directly.
-
-```{r}
-getminBBoxUsingSp = function(lat_lon_time_No_NA){
-  # Creating a spatial points object out of the lat_lon_time_No_NA
-  spatialPoints = SpatialPoints(lat_lon_time_No_NA %>% select(1:2))
-  # Creating the bounding box
-  bb_sp = bbox(spatialPoints)
-  return(bb_sp)
-} 
-```
-
-This is the old version of getting the bbox using the library sp where the path to the file was provided instead of lat_lon_time_No_NA
-```{r}
-# lat_lon_time_No_NA_File1 = combineLatLongWithTime(file_Path_File1)
-# Converting the dataframe to a SpatialPoints object
-# lat_lon_spatial_file1 = SpatialPoints(lat_lon_time_No_NA_File1 %>% select(1:2))
-# Applying the bbox function
-# bb_sp = bbox(lat_lon_spatial_file1)
-
-# head(lat_lon_spatial_file1)
-# bb_sp
-```
-
-
-
+you can get the minbbox using the following track attribute
+Track@sp@bbox
 
 
 ## 5. Testing the functions
@@ -295,91 +239,8 @@ plotMissionTrack(missionTrack_File1)
 plotMissionTrackWithLabels(lat_lon_time_No_NA_File1, missionTrack_File1)
 ```
 
-### Testing plotting the mission track for multiple files
-This is to be deleted!!!
-```{r}
-#plotMissionTracks(file_Path_File1)
-#plotMissionTracks(file_Path_File2)
-#plotMissionTracks(file_Path_File3)
-```
-
-### Testing the generalize function
-This section applies some steps of the generalize function. Those steps are taken from the source code of the generalize function. I am attempting to understand how the function works in order to decide what generalozation method to use and what the value is.
-
-As an example the Track object of File1 is used.
-
-#### Questions regarding the Track class
-What does the endtime mean?
-"@endtime to store the end time when having
-generalised line geometries with one value per attribute for a set of points (otherwise, de-
-faults to the time defined in @time)" ??
-
-By default, distance, duration, speed
-and direction are computed as the connections data.??
 
 
-
-
-#### Checking the first section of the timeInterval
-##### Using time interval
-It looks like when using the timeInterval the generalized track has as many lines as defined in the time interval.
-
-t@time has the class "xts" "zoo"
-index(t@time) has the class "POSIXct" "POSIXt"
-typeof(t@time) is integer
-typeof(index(t@time)) is double
-
-the function cut categorizes the values of a continuous variable in different levels of a factor.
-The time the Track object has is divided into the number specified by the argument timeInterval.
-
-segmentLengths counts how many incidents each factor of the result of the cut function has.
-
-```{r}
-t = missionTrack_File1
-# time interval is 60                                                   seconds
-timeInterval = 60
-# Applying the steps
-    # The function index belongs to the zoo package
-    origin = index(t@time)
-    cut = cut(origin, timeInterval)
-    segmentLengths = rle(as.numeric(cut))$lengths
-# Checking the results
-    head(origin)
-    head(cut)
-    summary(cut)
-    head(segmentLengths)
-    length(origin)
-    length(cut)
-    length(segmentLengths)
-```
-##### Using distance
-```{r}
-t = missionTrack_File1
-distance = 100
-# It calculates the cumulative distance starting from the first point to each point
-origin = c(0, cumsum(t@connections$distance))
-# floor takes a single numeric argument x and returns a numeric vector containing the largest integers not greater than the corresponding elements of x.
-# floor() function returns the largest integer that is smaller than or equal to value passed to it as argument(i.e : rounds downs to the nearest integer).
-cut = floor(origin / distance)
-# This returns how many times each number in the cut object there is
-segmentLengths = rle(cut)$lengths
-
-
-toIndex = cumsum(segmentLengths)
-	segmentLengths_ = integer()
-	for(i in seq_along(segmentLengths)) {
-		if (i == length(segmentLengths)
-			|| (!missing(timeInterval) && origin[toIndex[i]] %in% seq(origin[1], origin[length(origin)], timeInterval))
-			|| (!missing(distance) && origin[toIndex[i]] > 0 && origin[toIndex[i]] %% distance == 0)
-			|| (!missing(n)))
-			segmentLengths_[i] = segmentLengths[i]
-		else { 
-			segmentLengths_[i] = segmentLengths[i] + 1
-			if(i == length(segmentLengths) - 1 && segmentLengths[i+1] == 1)
-				break()
-		}
-	}
-```
 ### Exampels of the genaralize function
 Questions:
 What does the distance represent in case of having lat and long?
@@ -403,59 +264,6 @@ mission_Track_File1_generalized_distance = generalize(missionTrack_File1, distan
 
 
 
-
-
-
-
-
-
-
-
-
-
-### Getting the bbox using the library shotGroups
-This function also returns the width and height of the bounding box. Since the projection is WGS84. This information is not useful.
-```{r}
-lat_lon = lat_lon_time_No_NA_File1 %>% select(1:2)
-names(lat_lon)[1] = "point.x"
-names(lat_lon)[2] = "point.y"
-bb = getBoundingBox(lat_lon)
-bb
-```
-
-### Plotting the track before and after the generalization
-```{r}
-# plot(mission_Track_File3)
-plot(mission_Track_File1_generalized_distance, main = "The generalized track")
-plot(missionTrack_File1, main = "The whole track")
-```
-
-<!-- This function plots the generalized mission track -->
-<!-- The generalize function in trajectories is throwing me the following error: -->
-<!--           "CRS object has comment, which is lost in output" -->
-<!-- I don't think this function is necessary because there is already a function that plots Tracks which is called plotMissionTrack -->
-<!-- ```{r warning = FALSE} -->
-<!-- plotMissionTrackGeneralized = function(lat_lon_time_No_NA){ -->
-<!--   # Setting the reference system -->
-<!--   crs = CRS("+proj=longlat +datum=WGS84") -->
-<!--   # Creating a spatial points object -->
-<!--   sp = SpatialPoints(lat_lon_time_No_NA %>% select(1:2),crs) -->
-<!--   # Getting time -->
-<!--   time = lat_lon_time_No_NA$time_formatted -->
-<!--   # Getting data -->
-<!--   data = data.frame(lat_lon_time_No_NA %>% select(1:2)) -->
-<!--   # Creating an STIDF object -->
-<!--   stidf = STIDF(sp, time, data) -->
-<!--   # Creating a track object -->
-<!--   glider_track = Track(stidf) -->
-<!--   # Generalizing the track -->
-<!--   glider_track_generalized = generalize(glider_track, distance = 100) -->
-<!--   # plotting the map -->
-<!--    return(leaflet() %>%addTiles() %>% addPolylines(lat = glider_track_generalized@data[,1], lng = glider_track_generalized@data[,2])) -->
-<!-- } -->
-
-<!-- plotMissionTrackGeneralized(lat_lon_time_No_NA_File1) -->
-<!-- ``` -->
 
 
 

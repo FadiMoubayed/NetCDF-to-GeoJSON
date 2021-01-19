@@ -1,0 +1,59 @@
+---
+title: "Listing functions of GeoJSON libraries in R"
+author: "Fadi Moubayed"
+date: "2/01/2021"
+output: html_document
+---
+
+### Loading packages
+```{r message=FALSE,warning=FALSE}
+library(geojsonio)
+library(geojson)
+library(geojsonlint)
+library(geojsonR)
+library(wellknown) # for adding properties to GeoJson files
+```
+
+
+### The following function lists the functions available in the loaded libraries
+Extra libraries are also being listed using this function
+```{r}
+ListLoadedLibrariesFunctions = function(){
+  # Listing the default libraries. These do not need to be listed
+  defaultLibraries = list("stats","graphics" ,"grDevices","utils","datasets" ,"methods","base")
+  # Listing the loaded libraries
+  loadedLibraries = (.packages())
+  # Getting the loaded libraries only
+  LoadedlibrariesOnly = setdiff(loadedLibraries, defaultLibraries)
+  
+  # Adding package: to the names of the libraries
+  libraries1= paste0("package:", LoadedlibrariesOnly)
+  sapply(libraries1, ls)
+}
+
+```
+
+```{r}
+ListLoadedLibrariesFunctions()
+```
+
+### Other functions that can be used from external libraries
+#### st {sf}
+Create simple feature from a numeric vector, matrix or list
+Description
+Create simple feature from a numeric vector, matrix or list
+
+Usage
+st_point(x = c(NA_real_, NA_real_), dim = "XYZ")
+
+st_multipoint(x = matrix(numeric(0), 0, 2), dim = "XYZ")
+
+st_linestring(x = matrix(numeric(0), 0, 2), dim = "XYZ")
+
+st_polygon(x = list(), dim = if (length(x)) "XYZ" else "XY")
+
+st_multilinestring(x = list(), dim = if (length(x)) "XYZ" else "XY")
+
+st_multipolygon(x = list(), dim = if (length(x)) "XYZ" else "XY")
+
+st_geometrycollection(x = list(), dims = "XY")

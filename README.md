@@ -11,6 +11,7 @@ correct.
 + The minimum bounding box
 + The temporal extent
 + The mission track (so far as a leaflet map)
++ The names of the variables
 
 The track of the mission should be generalized. It is not efficient to include
 all the coordinates of the track.
@@ -56,7 +57,7 @@ question that remains is what if the time dimension has NA that is not available
 + Generalizing tracks is throwing an error due to the reference system
 "CRS object has comment, which is lost in output"
 + Some labels (the first measurement of the day) are given at 2:00 a.m.
-+ When I type the track object in the console, I get information such as the minimum bounding box and the time span of the mission. The problem is I don't know how to get that information into a variable.
++ When I type the track object in the console, I get information such as the minimum bounding box and the time span of the mission. The problem is I don't know how to get that information into a variable. (Check the print method of the Track class)
 
 #### Next steps
 + Add a function to genralize the mission track
@@ -65,3 +66,5 @@ question that remains is what if the time dimension has NA that is not available
 + Organize the section testing the functions
 + I need to decide on the form in which metadata extracted using the written functions is saved. Some libraries for writing GeoJson in R require objects to be saved in lists (S3 objects)
 + Add a function to get the number of NA in the netcdf file if any
++ Check how adding the length of the track to the metadata could be done
++ Add a function to convert the extracted metadata to a GeoJson file. 

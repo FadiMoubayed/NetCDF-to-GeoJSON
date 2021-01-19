@@ -2,6 +2,9 @@ library(sp)
 library(trajectories)
 library(manipulate)
 
+# The script Extracting metadata from NetCDF needs to run first before this
+# script is run
+
 # This function uses the gSimplify function to generalze the geomentry of the
 # glider traks (only the lines of the track are generalized)
 simplifyTrack <- function(Track, tol){
@@ -32,7 +35,7 @@ plotSimplifiedTrack <- function(Track, tol){
 
 # This is an example of the previous function
 # A1 Track object example
-manipulate(plotSimplifiedTrack(A1, tol = n),n=slider(0.01,0.2))
+manipulate(plotSimplifiedTrack(A1, tol = n),n=slider(0.01,0.9))
 manipulate(plotSimplifiedTrack(A1, tol = n),n=slider(min = 0.001, max = 0.2, step = 0.005))
 
 # First mission example
@@ -46,7 +49,7 @@ plotGeneralizedTrack = function(Track, distance, tol){
 }
 
 # This is an example of the previous function
-manipulate(plotGeneralizedTrack(missionTrack_File1, distance = d, tol = t),d = slider(1000,10000), tol = slider(0.001,100))
+manipulate(plotGeneralizedTrack(missionTrack_File1, distance = d, tol = t),d = slider(1000,100000), tol = slider(0.001,100))
 
 # This section tries adding a check box to the previous functin to plot the original track
 # This function plots the generalized track using distance and the gSimplify functions
