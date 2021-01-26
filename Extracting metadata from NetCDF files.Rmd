@@ -64,11 +64,11 @@ formatTimeDim <- function(file){
             
         },
         error = function(e){
-            message('Caught an error!')
+            message('Caught an error while formatting time!')
             print(e)
         },
         warning = function(w){
-            message('Caught an warning!')
+            message('Caught an warning while formatting time!')
             print(w)
         }
     )    

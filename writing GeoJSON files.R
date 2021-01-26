@@ -5,6 +5,7 @@ library(geojsonR)
 library(wellknown)
 library(sf)
 library(trajectories)
+library(rgdal)
 
 # Getting the coordinates of the Track object A1
 coordsA1 = A1@sp@coords
@@ -123,7 +124,7 @@ TrackPoints = coordsToNumericList(coordsA1)
 lineStringInfo = list(type = "LineString",coordinates = TrackPoints)
 # Converting the linestring info to JSON
 lineStringInfoJSON = rjson::toJSON(lineStringInfo)
-# creating a linestring objet out of the lineStringInfoJSON
+# creating a linestring object out of the lineStringInfoJSON
 trackLineString = linestring(lineStringInfoJSON)
 # writing the results to disk to check what I got
 geo_write(trackLineString, file = paste(geojsonpath,"A1lineString.JSON"))
@@ -178,7 +179,7 @@ line_string2 = init$LineString(geoJsonList, stringify = TRUE)
 
 # This looks like the right solution
 # This function converts coordinates from a martix to a numeric list
-# The coordinates are assumed to be in the first 2 columns
+# The coordinates are assumed to be in the first 2 columns of the matrix
 
 coordsToNumericList = function(matrix){
   list = list()
@@ -198,3 +199,10 @@ feature_dat1 = list(id = "1", bbox = c(1,2,3,4), geometry = list(LineString = li
 
 feature_obj = init$Feature(feature_dat1, stringify = TRUE)
 
+################################################################################
+# Using the library rgdal
+################################################################################
+pathrgdal = "/home/fadi/DataX1/University/WWU/WWU 5/Task 2/GeoJson/Experimenting writing GeoJSON files/Rgdal"
+# converting the coordinates to a SpatialPixelsDataFrame
+SPDFA1 = SpatialPointsDataFrame(coordsA1,as.data.frame(coordsA1))
+writeOGR(SPDFA1, layer = pathrgdal,"A1Coords.geojson" ,driver='GeoJSON')

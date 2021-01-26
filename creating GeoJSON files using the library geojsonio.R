@@ -28,6 +28,8 @@ trackLineString = linestring(lineStringInfoJSON)
 AllFeatureTest2 = trackLineString %>% feature()  %>%  properties_add( .list = featureProperties)
 # creating a list of the properties
 featureProperties = list(id = "1", bbox = c(1,2,3,4), timespan = "1/1/2019 - 31-10-2020")
+
+
 # writing the goeJSON file to disk
 geo_write(AllFeatureTest2, file = paste(geojsonpath,"allfeaturetes2.geojson"))
 
