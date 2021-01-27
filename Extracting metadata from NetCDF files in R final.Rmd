@@ -25,6 +25,7 @@ library(geojson)
 ```
 
 ### Providing sample NetCFD files and the path to the output GeoJSON files
+Here, the directory in which the the netCDF files exist on disk should be provided. Additionally, the file name should also be provided in addition to the output directory for saving the GeoJSON file that has the extracted metadata.
 ```{r}
 # This is where the netCDF data files reside
 files_Directory = "/home/fadi/DataX1/University/WWU/WWU 5/netCDF sample files/"
@@ -345,10 +346,44 @@ writeMetadataToGeoJSON(generalizedTrack, properties, geoJSONOutput, file_Name)
 ```
 
 
-
+### trying to create a feature collection of the generalized track and the labels
+This creates a multipoint feature of the lables and thier timestamp.
+Should be written as a function
 ```{r}
+# generalizedTrack1 = generalizeMissionTrack(missionTrack)
+
+#
+# Converting the coordinates from a dataframe to a list
+geometryListLabels = coordsToNumericList(missionTrackLabels)
+# Creating a list that contains the necessary information to create a linestring
+# Json object which will be used to create the linestring
+MultipointsInfo = list(type = "MultiPoint",coordinates = geometryListLabels)
+# Converting the linestring info to JSON
+MultipointsInfoJSON = rjson::toJSON(MultipointsInfo)
+# Creating a linestring object out of the lineStringInfoJSON
+labelsMultipoint = multipoint(MultipointsInfoJSON)
+# Adding the timestamp to a list (the multipoint properties)
+labelsTimeStamps = list("Time Stamps" = missionTrackLabels[,3])
+# Creating the gosJSON file
+labelsAsFeature = labelsMultipoint %>% feature()  %>%  properties_add( .list = labelsTimeStamps)
+labelsfileName = "labels"   # Should be temporary!!!!!
+# Creating a name for the output file
+outputFile = paste0(geoJSONOutput ,labelsfileName, "_metadata.goejson")
+# writing the goeJSON file to disk
+geo_write(labelsAsFeature, file = outputFile)
+
+
+
+
+
+featurecoll = featurecollection(featls2)
+labelsfileName = "labelsFeatureCollection"
+geo_write(featurecoll, file = outputFile)
 
 ```
+
+
+### trying to create a featurecollection of the generalized track and the labels
 
 ```{r}
 
