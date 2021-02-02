@@ -398,6 +398,7 @@ library(geojson)</code></pre>
 </div>
 <div id="providing-sample-netcfd-files-and-the-path-to-the-output-geojson-files" class="section level3">
 <h3>Providing sample NetCFD files and the path to the output GeoJSON files</h3>
+<p>Here, the directory in which the the netCDF files exist on disk should be provided. Additionally, the file name should also be provided in addition to the output directory for saving the GeoJSON file that has the extracted metadata.</p>
 <pre class="r"><code># This is where the netCDF data files reside
 files_Directory = &quot;/home/fadi/DataX1/University/WWU/WWU 5/netCDF sample files/&quot;
 # This is the files that needs to be read
@@ -563,38 +564,28 @@ number_of_dimensions = length(dimensions)</code></pre>
     )
 }</code></pre>
 </div>
-<div id="getting-mission-track-information" class="section level3">
-<h3>Getting mission track information</h3>
-<p>I need to think how I should save this information. Should i save them in a named list or should I save them seperately?</p>
-<pre class="r"><code>getMissionTrackInfo = function(missionTrack){
-  # Getting the bounding box
-  bbox = missionTrack@sp@bbox
-  # Getting the length of the track in KM
-  length = sum(missionTrack@connections$distance) /1000
-  # Getting the number of points the track has
-  numberOfPoints = length(missionTrack@sp)
-  # Getting the time period
-  ix = index(missionTrack@time)
-  tmin = min(ix)
-  tmax = max(ix)
-  timePeriod = paste0(&quot;[&quot;,tmin,&quot; , &quot; ,tmax,&quot;]&quot;)
-  
-  # Putting the track infor in a named list
-  trackInfo = list(&quot;Bounding Box&quot; = bbox, &quot;Track Length&quot; = length, &quot;Number Of Points&quot; = numberOfPoints
-                   , &quot;Time Period&quot; = timePeriod)
-  return(trackInfo)
-}</code></pre>
-</div>
 <div id="generalizing-the-mission-track" class="section level3">
 <h3>Generalizing the mission track</h3>
 <p>This function returns a dataframe with the generalized track’s coordinates This will be converted to a list of coordinates using the function I wrote</p>
 <pre class="r"><code>generalizeMissionTrack = function(missionTrack){
-  # Generalizing the mission track
-  generalizedTrack = generalize(missionTrack, distance = 2000, tol = 0.006)
-  # Getting the coordinates of the generalized track
-  generalizedTrackCoordinates = coordinates(generalizedTrack)
-  
-  return(generalizedTrackCoordinates)
+  tryCatch(
+        expr = {
+            # Generalizing the mission track
+            generalizedTrack = generalize(missionTrack, distance = 2000, tol = 0.006)
+            # Getting the coordinates of the generalized track
+            generalizedTrackCoordinates = coordinates(generalizedTrack)
+            message(&#39;Mission track is successfully generalized!&#39;)
+            return(generalizedTrackCoordinates)     
+        },
+        error = function(e){
+            message(&#39;Caught an error while generalizing the mission track!&#39;)
+            print(e)
+        },
+        warning = function(w){
+            message(&#39;Caught an warning while while generalizing the mission track!&#39;)
+            print(w)
+        }
+    )
 }</code></pre>
 </div>
 </div>
@@ -603,36 +594,95 @@ number_of_dimensions = length(dimensions)</code></pre>
 <div id="a-function-to-convert-coordinates-from-a-martix-or-a-dataframe-to-a-numeric-list" class="section level3">
 <h3>A function to convert coordinates from a martix or a dataframe to a numeric list</h3>
 <pre class="r"><code>coordsToNumericList = function(matrix){
-  list = list()
-  for(i in 1:length(matrix[,1])){
-    list[[i]]= c(matrix[[i,1]], matrix[[i,2]])
-  }
-  return(list)
+  tryCatch(
+        expr = {
+            list = list()
+            for(i in 1:length(matrix[,1])){
+              list[[i]]= c(matrix[[i,1]], matrix[[i,2]])
+            }
+            message(&#39;The generalized track coordinates successfully converted a numeric list!&#39;)
+            return(list)    
+        },
+        error = function(e){
+            message(&#39;Caught an error while creating mission track labels!&#39;)
+            print(e)
+        },
+        warning = function(w){
+            message(&#39;Caught an warning while while creating mission track labels!&#39;)
+            print(w)
+        }
+    )
 }</code></pre>
-</div>
-<div id="creating-the-list-of-non-spatial-properties" class="section level3">
-<h3>Creating the list of non spatial properties</h3>
-<p>I need to think how to do this in the best way</p>
 </div>
 <div id="creating-the-goejson-file" class="section level3">
 <h3>Creating the GoeJSON file</h3>
-<p>Geometry is the generalized track coordinates properties is a named list that has all the non spatial properties</p>
-<pre class="r"><code>writeMetadataToGeoJSON = function(geometry, properties,outputDirectory, fileName){
-  # Converting the coordinates from a dataframe to a list
-  geometryList = coordsToNumericList(geometry)
-  # Creating a list that contains the necessary information to create a linestring
-  # Json object which will be used to create the linestring
-  lineStringInfo = list(type = &quot;LineString&quot;,coordinates = geometryList)
-  # Converting the linestring info to JSON
-  lineStringInfoJSON = rjson::toJSON(lineStringInfo)
-  # Creating a linestring object out of the lineStringInfoJSON
-  trackLineString = linestring(lineStringInfoJSON)
-  # Creating the gosJSON file
-  trackAsFeature = trackLineString %&gt;% feature()  %&gt;%  properties_add( .list = properties)
-  # Creating a name for the output file
-  outputFile = paste0(outputDirectory ,fileName, &quot;_metadata.goejson&quot;)
-  # writing the goeJSON file to disk
-  geo_write(trackAsFeature, file = outputFile)
+<p>Geometry is the generalized track coordinates saved in a matrix or a dataframe properties is a named list that has all the non spatial properties</p>
+</div>
+<div id="creating-a-linestring-out-of-the-generalized-track" class="section level3">
+<h3>Creating a linestring out of the generalized track</h3>
+<pre class="r"><code>createLineString = function(geometry, properties){
+  
+  tryCatch(
+        expr = {
+            # Converting the coordinates from a dataframe to a list
+            geometryList = coordsToNumericList(geometry)
+            # Creating a list that contains the necessary information to create a linestring
+            # Json object which will be used to create the linestring
+            lineStringInfo = list(type = &quot;LineString&quot;,coordinates = geometryList)
+            # Converting the linestring info to JSON
+            lineStringInfoJSON = rjson::toJSON(lineStringInfo)
+            # Creating a linestring object out of the lineStringInfoJSON
+            trackLineString = linestring(lineStringInfoJSON)
+            # Creating the gosJSON StringLine object
+            trackAsFeature = trackLineString %&gt;% feature()  %&gt;%  properties_add( .list = properties)
+
+            message(&#39;The generalized track has been sucessfully created as a lineString!&#39;)
+            
+            return(trackAsFeature)
+        },
+        error = function(e){
+            message(&#39;Caught an error while creating a linestring out of the generalized object!&#39;)
+            print(e)
+        },
+        warning = function(w){
+            message(&#39;Caught an warning while creating a linestring out of the generalized object!&#39;)
+            print(w)
+        }
+    )
+}</code></pre>
+</div>
+<div id="creating-multipoints-out-of-the-track-labels" class="section level3">
+<h3>Creating MultiPoints out of the Track Labels</h3>
+<p>Goemetry is the coordinates of the first measurement of each day obtained from the function getMissionTrackLabels</p>
+<pre class="r"><code>createMultiPoint = function(geometry, properties){
+  
+  tryCatch(
+        expr = {
+            # Converting the coordinates from a dataframe to a list
+            geometryListLabels = coordsToNumericList(geometry)
+            # Creating a list that contains the necessary information to create a linestring
+            # Json object which will be used to create the linestring
+            MultipointsInfo = list(type = &quot;MultiPoint&quot;,coordinates = geometryListLabels)
+            # Converting the linestring info to JSON
+            MultipointsInfoJSON = rjson::toJSON(MultipointsInfo)
+            # Creating a linestring object out of the lineStringInfoJSON
+            labelsMultipoint = multipoint(MultipointsInfoJSON)
+            # Creating the gosJSON MultiPoint object
+            labelsAsFeature = labelsMultipoint %&gt;% feature()  %&gt;%  properties_add( .list = properties)
+
+            message(&#39;The mission track Labels sucessfully created as MultiPoint!&#39;)
+            
+            return(labelsAsFeature)
+        },
+        error = function(e){
+            message(&#39;Caught an error while creating MultiPoint out of mission lables!&#39;)
+            print(e)
+        },
+        warning = function(w){
+            message(&#39;Caught an warning while creating while creating MultiPoint out of mission lables!&#39;)
+            print(w)
+        }
+    )
 }</code></pre>
 </div>
 <div id="testing" class="section level3">
@@ -644,18 +694,90 @@ lat_lon_time = combineLatLongWithTime(file_Path)</code></pre>
 <pre class="r"><code># Getting the mission track
 missionTrack = getMissionTrack(lat_lon_time)</code></pre>
 <pre><code>## Mission track object successfully created!</code></pre>
+<pre class="r"><code># Generalizing the track
+generalizedTrack = generalizeMissionTrack(missionTrack)</code></pre>
+<pre><code>## Mission track is successfully generalized!</code></pre>
 <pre class="r"><code># Getting the mission track labels
 missionTrackLabels = getMissionTrackLabels(lat_lon_time)</code></pre>
 <pre><code>## Mission track labels successfully created!</code></pre>
+</div>
+<div id="getting-mission-track-information" class="section level3">
+<h3>Getting mission track information</h3>
+<p>I did not encapsulte this in a function because adding the non-spatial properties with nested lists does not work well.</p>
+<pre class="r"><code># Getting the bounding box
+bboxOriginal = missionTrack@sp@bbox
+bbox = list(bboxOriginal[1,1], bboxOriginal[1,2], bboxOriginal[2,1], bboxOriginal[1,2])
+# Getting the length of the track in KM
+length = sum(missionTrack@connections$distance) /1000
+# Getting the number of points the track has
+numberOfPoints = length(missionTrack@sp)
+# Getting the time period
+ix = index(missionTrack@time)
+tmin = min(ix)
+tmax = max(ix)
+timePeriod = paste0(&quot;[&quot;,tmin,&quot; , &quot; ,tmax,&quot;]&quot;)</code></pre>
+</div>
+<div id="creating-the-non-spatial-properties" class="section level3">
+<h3>Creating the non spatial properties</h3>
+<div id="the-mission-track-non-spatial-properties" class="section level4">
+<h4>The mission track non-spatial properties</h4>
+<p>Extra non spatial properties can be added to this list</p>
 <pre class="r"><code># Getting the mission non spatial properties
-properties = getMissionTrackInfo(missionTrack)
-# Generalizing the mission&#39;s track
-generalizedTrack = generalizeMissionTrack(missionTrack)
-# Writing the geoJSON file to disk
-writeMetadataToGeoJSON(generalizedTrack, properties, geoJSONOutput, file_Name) # Does not work!!</code></pre>
+propertiesLineString = list(&quot;variabels names&quot; = variabels, &quot;number of variables&quot;= number_of_variables,&quot;dimensions names&quot; = dimensions, &quot;bbox&quot; = bbox, &quot;Track Length&quot; = length, &quot;Number of Points&quot; = numberOfPoints, &quot;Time Period&quot; = timePeriod)</code></pre>
+</div>
+<div id="getting-the-timestamps-of-the-mission-track-labels" class="section level4">
+<h4>Getting the timestamps of the mission track labels</h4>
+<p>it is simply the third column of the track labels dataframe</p>
+<pre class="r"><code>propertiesMultiPoint = list(&quot;Time Stamps&quot; = missionTrackLabels[,3])</code></pre>
+</div>
+</div>
+<div id="creating-a-featurecollection-of-the-generalized-track-and-the-labels" class="section level3">
+<h3>Creating a featurecollection of the generalized track and the labels</h3>
+<pre class="r"><code># Creating a LineString object out of the generalized track
+lineString = createLineString(generalizedTrack, propertiesLineString)</code></pre>
+<pre><code>## The generalized track coordinates successfully converted a numeric list!</code></pre>
 <pre><code>## Registered S3 method overwritten by &#39;geojsonlint&#39;:
 ##   method         from 
 ##   print.location dplyr</code></pre>
+<pre><code>## The generalized track has been sucessfully created as a lineString!</code></pre>
+<pre class="r"><code># Creating a MultiPoint object out of the track labels
+multiPoint = createMultiPoint(missionTrackLabels, propertiesMultiPoint)</code></pre>
+<pre><code>## The generalized track coordinates successfully converted a numeric list!</code></pre>
+<pre><code>## The mission track Labels sucessfully created as MultiPoint!</code></pre>
+<pre class="r"><code># Putting the LineString and the MultiPoint in a list
+featureCollList = list(lineString, multiPoint)
+# Creating the feature collection that will be saved to the geoJSON file
+featureColl = featurecollection(featureCollList)</code></pre>
+</div>
+<div id="a-function-to-save-the-metadata-to-a-geojson-file" class="section level3">
+<h3>A function to save the metadata to a GeoJSON file</h3>
+<pre class="r"><code>writeGeoJSON &lt;- function(x, file) {
+tryCatch(
+        expr = {
+            if (inherits(file, &quot;file&quot;)) on.exit(close(file)) 
+            cat(
+              geo_pretty(x),
+              &quot;\n&quot;,
+              file = file
+            )
+        },
+        error = function(e){
+            message(&#39;Caught an error while writing the GeoJSON file to disk!&#39;)
+            print(e)
+        },
+        warning = function(w){
+            message(&#39;Caught an warning while writing the GeoJSON file to disk!&#39;)
+            print(w)
+        }
+    )
+}</code></pre>
+</div>
+<div id="saving-the-geojson-file-to-disk" class="section level3">
+<h3>Saving the geoJSON file to disk</h3>
+<pre class="r"><code># Creating a name for the output file
+outputFile = paste0(geoJSONOutput ,file_Name, &quot;_metadata.goejson&quot;)
+# writing the goeJSON file to disk
+writeGeoJSON(featureColl, file = outputFile)</code></pre>
 </div>
 </div>
 

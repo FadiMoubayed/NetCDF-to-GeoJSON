@@ -257,18 +257,14 @@ coordsToNumericList = function(matrix){
 }
 ```
 
-### Creating the list of non spatial properties
-I need to think how to do this in the best way
-```{r}
-
-```
-
 ### Creating the GoeJSON file
-Geometry is the generalized track coordinates
+Geometry is the generalized track coordinates saved in a matrix or a dataframe
 properties is a named list that has all the non spatial properties
 
+### Creating a linestring out of the generalized track
+
 ```{r}
-writeMetadataToGeoJSON = function(geometry, properties,outputDirectory, fileName){
+createLineString = function(geometry, properties){
   
   tryCatch(
         expr = {
@@ -281,26 +277,60 @@ writeMetadataToGeoJSON = function(geometry, properties,outputDirectory, fileName
             lineStringInfoJSON = rjson::toJSON(lineStringInfo)
             # Creating a linestring object out of the lineStringInfoJSON
             trackLineString = linestring(lineStringInfoJSON)
-            # Creating the gosJSON file
+            # Creating the gosJSON StringLine object
             trackAsFeature = trackLineString %>% feature()  %>%  properties_add( .list = properties)
-            # Creating a name for the output file
-            outputFile = paste0(outputDirectory ,fileName, "_metadata.goejson")
-            # writing the goeJSON file to disk
-            geo_write(trackAsFeature, file = outputFile)
+
+            message('The generalized track has been sucessfully created as a lineString!')
             
-            message('The metadata has been sucessfully saved as a GeoJSON on disk!')
+            return(trackAsFeature)
         },
         error = function(e){
-            message('Caught an error while creating mission track labels!')
+            message('Caught an error while creating a linestring out of the generalized object!')
             print(e)
         },
         warning = function(w){
-            message('Caught an warning while while creating mission track labels!')
+            message('Caught an warning while creating a linestring out of the generalized object!')
             print(w)
         }
     )
 }
 ```
+
+### Creating MultiPoints out of the Track Labels
+Goemetry is the coordinates of the first measurement of each day obtained from the function getMissionTrackLabels
+```{r}
+createMultiPoint = function(geometry, properties){
+  
+  tryCatch(
+        expr = {
+            # Converting the coordinates from a dataframe to a list
+            geometryListLabels = coordsToNumericList(geometry)
+            # Creating a list that contains the necessary information to create a linestring
+            # Json object which will be used to create the linestring
+            MultipointsInfo = list(type = "MultiPoint",coordinates = geometryListLabels)
+            # Converting the linestring info to JSON
+            MultipointsInfoJSON = rjson::toJSON(MultipointsInfo)
+            # Creating a linestring object out of the lineStringInfoJSON
+            labelsMultipoint = multipoint(MultipointsInfoJSON)
+            # Creating the gosJSON MultiPoint object
+            labelsAsFeature = labelsMultipoint %>% feature()  %>%  properties_add( .list = properties)
+
+            message('The mission track Labels sucessfully created as MultiPoint!')
+            
+            return(labelsAsFeature)
+        },
+        error = function(e){
+            message('Caught an error while creating MultiPoint out of mission lables!')
+            print(e)
+        },
+        warning = function(w){
+            message('Caught an warning while creating while creating MultiPoint out of mission lables!')
+            print(w)
+        }
+    )
+}
+```
+
 
 ### Testing
 Maybe this should be encapsulated into one function in the end 
@@ -309,15 +339,19 @@ Maybe this should be encapsulated into one function in the end
 lat_lon_time = combineLatLongWithTime(file_Path)
 # Getting the mission track
 missionTrack = getMissionTrack(lat_lon_time)
+# Generalizing the track
+generalizedTrack = generalizeMissionTrack(missionTrack)
 # Getting the mission track labels
 missionTrackLabels = getMissionTrackLabels(lat_lon_time)
 
 ```
 
-### Getting mission track informati
+### Getting mission track information
+I did not encapsulte this in a function because adding the non-spatial properties with nested lists does not work well.
 ```{r}
 # Getting the bounding box
-bbox = missionTrack@sp@bbox
+bboxOriginal = missionTrack@sp@bbox
+bbox = list(bboxOriginal[1,1], bboxOriginal[1,2], bboxOriginal[2,1], bboxOriginal[1,2])
 # Getting the length of the track in KM
 length = sum(missionTrack@connections$distance) /1000
 # Getting the number of points the track has
@@ -330,70 +364,64 @@ timePeriod = paste0("[",tmin," , " ,tmax,"]")
 ```
 
 ### Creating the non spatial properties
+
+#### The mission track non-spatial properties
 Extra non spatial properties can be added to this list
 ```{r}
 # Getting the mission non spatial properties
-properties = list("variabels names" = variabels, "number of variables"= number_of_variables,"dimensions names" = dimensions, "Bounding box" = bbox, "Track Length" = length, "Number of Points" = numberOfPoints, "Time Period" = timePeriod)
+propertiesLineString = list("variabels names" = variabels, "number of variables"= number_of_variables,"dimensions names" = dimensions, "bbox" = bbox, "Track Length" = length, "Number of Points" = numberOfPoints, "Time Period" = timePeriod)
+
+```
+#### Getting the timestamps of the mission track labels
+it is simply the third column of the track labels dataframe
+```{r}
+propertiesMultiPoint = list("Time Stamps" = missionTrackLabels[,3])
+```
+
+### Creating a featurecollection of the generalized track and the labels
+
+```{r}
+# Creating a LineString object out of the generalized track
+lineString = createLineString(generalizedTrack, propertiesLineString)
+# Creating a MultiPoint object out of the track labels
+multiPoint = createMultiPoint(missionTrackLabels, propertiesMultiPoint)
+# Putting the LineString and the MultiPoint in a list
+featureCollList = list(lineString, multiPoint)
+# Creating the feature collection that will be saved to the geoJSON file
+featureColl = featurecollection(featureCollList)
+```
+
+### A function to save the metadata to a GeoJSON file
+
+```{r}
+writeGeoJSON <- function(x, file) {
+tryCatch(
+        expr = {
+            if (inherits(file, "file")) on.exit(close(file)) 
+            cat(
+              geo_pretty(x),
+              "\n",
+              file = file
+            )
+        },
+        error = function(e){
+            message('Caught an error while writing the GeoJSON file to disk!')
+            print(e)
+        },
+        warning = function(w){
+            message('Caught an warning while writing the GeoJSON file to disk!')
+            print(w)
+        }
+    )
+}
 
 ```
 
-### Generalizing the track and creating the GeoJSON file
+### Saving the geoJSON file to disk
 ```{r}
-# Generalizing the mission's track
-generalizedTrack = generalizeMissionTrack(missionTrack)
-# Writing the geoJSON file to disk
-writeMetadataToGeoJSON(generalizedTrack, properties, geoJSONOutput, file_Name)
-```
-
-
-### trying to create a feature collection of the generalized track and the labels
-This creates a multipoint feature of the lables and thier timestamp.
-Should be written as a function
-```{r}
-# generalizedTrack1 = generalizeMissionTrack(missionTrack)
-
-#
-# Converting the coordinates from a dataframe to a list
-geometryListLabels = coordsToNumericList(missionTrackLabels)
-# Creating a list that contains the necessary information to create a linestring
-# Json object which will be used to create the linestring
-MultipointsInfo = list(type = "MultiPoint",coordinates = geometryListLabels)
-# Converting the linestring info to JSON
-MultipointsInfoJSON = rjson::toJSON(MultipointsInfo)
-# Creating a linestring object out of the lineStringInfoJSON
-labelsMultipoint = multipoint(MultipointsInfoJSON)
-# Adding the timestamp to a list (the multipoint properties)
-labelsTimeStamps = list("Time Stamps" = missionTrackLabels[,3])
-# Creating the gosJSON file
-labelsAsFeature = labelsMultipoint %>% feature()  %>%  properties_add( .list = labelsTimeStamps)
-labelsfileName = "labels"   # Should be temporary!!!!!
 # Creating a name for the output file
-outputFile = paste0(geoJSONOutput ,labelsfileName, "_metadata.goejson")
+outputFile = paste0(geoJSONOutput ,file_Name, "_metadata.goejson")
 # writing the goeJSON file to disk
-geo_write(labelsAsFeature, file = outputFile)
-
-
-
-
-
-featurecoll = featurecollection(featls2)
-labelsfileName = "labelsFeatureCollection"
-geo_write(featurecoll, file = outputFile)
-
+writeGeoJSON(featureColl, file = outputFile)
 ```
-
-
-### trying to create a featurecollection of the generalized track and the labels
-
-```{r}
-
-```
-
-
-```{r}
-
-```
-
-
-
 
