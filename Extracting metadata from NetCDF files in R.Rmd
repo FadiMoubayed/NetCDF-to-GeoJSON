@@ -414,13 +414,13 @@ timePeriod = paste0("[",tmin," , " ,tmax,"]")
 Extra non spatial properties can be added to this list
 ```{r}
 # Getting the mission non spatial properties
-propertiesLineString = list("variabels names" = variabels, "number of variables"= number_of_variables,"dimensions names" = dimensions, "bbox" = bbox, "Track Length" = length, "Number of Points" = numberOfPoints, "Time Period" = timePeriod)
+propertiesLineString = list("variabels_names" = variabels, "number_of_variables"= number_of_variables,"dimensions_names" = dimensions, "bbox" = bbox, "Track_Length" = length, "Number_of_Points" = numberOfPoints, "Time_Period" = timePeriod)
 
 ```
 #### Getting the timestamps of the mission track labels
 it is simply the third column of the track labels dataframe
 ```{r}
-propertiesMultiPoint = list("Time Stamps" = missionTrackLabels[,3])
+propertiesMultiPoint = list("Time_Stamps" = missionTrackLabels[,3])
 ```
 
 ### Creating a featurecollection of the generalized track and the labels
