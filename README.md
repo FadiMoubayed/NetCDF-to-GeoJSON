@@ -32,3 +32,7 @@ The track of the mission is generalized using Douglas-Peucker Algorithm
 + Provide the file name whose metadata you want to get extracted in the variable
 file_Name.
 + Provide the directory of the Gepjson output folder in the variable geoJSONOutput.
++ To explore with the dinamic generalization values:
+    + Run the rmd script
+Extracting metadata from NetCDF files in R.
+    + Run the script Testing generalization values.R

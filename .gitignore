@@ -40,3 +40,5 @@ vignettes/*.pdf
 
 # The html files resulting from the R markdown
 *.html
+
+Listing_functions/
