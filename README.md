@@ -2,7 +2,13 @@
 
 ### Description
 Extracts metadata from the glider NetCDF files into a GeoJSON file using R.
-The extracted metadata will be mapped to O&M
+The extracted metadata will be mapped to OGC O&M so the glider data gets
+available through a spatial data infrastructure.
+
+The NetCDF files are available through the following FTP server:
+
+http://www.ifremer.fr/co/ego/ego/v2
+
 
 ### Input
 The NetCDF glider metadata
