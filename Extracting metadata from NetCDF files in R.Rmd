@@ -33,7 +33,7 @@ Here, the directory in which the the netCDF files exist on disk should be provid
 # This is where the netCDF data files reside
 files_Directory = "/home/fadi/DataX1/University/WWU/WWU 5/netCDF sample files/"
 # This is the files that needs to be read
-file_Name = "amerigo_coconet_R.nc"
+file_Name = "amadeus_20191123_R.nc"
 # This is the complete path to the netCDF file that is being read
 file_Path = paste0(files_Directory,file_Name)
 # Reading the file
