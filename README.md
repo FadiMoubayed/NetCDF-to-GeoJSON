@@ -14,20 +14,45 @@ http://www.ifremer.fr/co/ego/ego/v2
 The NetCDF glider metadata
 
 ### Output
-A well formatted GeoJSON file that has the extracted metadata.
+A well formatted GeoJSON file that has the extracted glider metadata.
 
 
 ### Extracted metadata
-+ The minimum bounding box
-+ The temporal extent
-+ The mission track
-+ The names of the variables
-+ The dimensions names
-
++ Variable names
++ Number of variables
++ Dimensions names
++ Number of dimensions
++ Minimum bounding box
++ Track’s length
++ Number of coordinates
++ Time span
++ Generalized track
++ Track’s labels
 
 The track of the mission is generalized using Douglas-Peucker Algorithm
 
-### How to use
+## The resulting GeoJSON file has the following structure:
+
+A feature collection that contains two features
++ A LineString representing the generalized track
+    + The properties include
+    + Variable names
+    + Number of variables
+    + Dimensions names
+    + Bounding box
+    + Track length
+    + Number of points
+    + Time span
+    + The geometry includes the coordinates of the generalized track
+
++ MultiPoint representing the track’s map labels
+    + The properties include
+        +  The extracted time stamps
+    + The geometry includes
+        + The labels’ coordinates
+
+
+## How to use
 + Place the downloaded NetCDF files in a directory on your hard drive. Provide that directory to the variable files_Directory.
 + Provide the file name whose metadata you want to get extracted in the variable
 file_Name.
